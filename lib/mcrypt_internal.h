@@ -48,32 +48,32 @@ typedef CRYPT_STREAM* MCRYPT;
 
 #define MCRYPT_FAILED 0x0
 
-int mcrypt_module_close(MCRYPT td);
+WIN32DLL_DEFINE int mcrypt_module_close(MCRYPT td);
 
 /* frontends */
 
-int end_mcrypt( MCRYPT td, void *buf);
-int mcrypt_enc_get_size(MCRYPT td);
-int mcrypt_mode_get_size(MCRYPT td);
-int mcrypt_set_key(MCRYPT td, void *a, const void *, int c, const void *, int e);
-int mcrypt_enc_get_block_size(MCRYPT td);
-int __mcrypt_get_block_size(MCRYPT td);
-int mcrypt_enc_get_algo_iv_size(MCRYPT td);
-int mcrypt_enc_get_iv_size(MCRYPT td);
-int mcrypt_enc_get_key_size(MCRYPT td);
-int* mcrypt_enc_get_supported_key_sizes(MCRYPT td, int* out_size);
-int mcrypt_enc_is_block_algorithm(MCRYPT td);
-char *mcrypt_enc_get_algorithms_name(MCRYPT td);
-int init_mcrypt(MCRYPT td, void*buf, const void *, int, const void *);
-int mcrypt(MCRYPT td, void* buf, void *a, int b);
-int mdecrypt(MCRYPT td, void* buf, void *a, int b);
-char *mcrypt_enc_get_modes_name(MCRYPT td);
-int mcrypt_enc_is_block_mode(MCRYPT td);
-int mcrypt_enc_mode_has_iv(MCRYPT td);
-int mcrypt_enc_is_block_algorithm_mode(MCRYPT td);
-int mcrypt_module_algorithm_version(const char *algorithm, const char *a_directory);
-int mcrypt_module_mode_version(const char *mode, const char *m_directory);
-int mcrypt_get_size(MCRYPT td);
+WIN32DLL_DEFINE int end_mcrypt( MCRYPT td, void *buf);
+WIN32DLL_DEFINE int mcrypt_enc_get_size(MCRYPT td);
+WIN32DLL_DEFINE int mcrypt_mode_get_size(MCRYPT td);
+WIN32DLL_DEFINE int mcrypt_set_key(MCRYPT td, void *a, const void *, int c, const void *, int e);
+WIN32DLL_DEFINE int mcrypt_enc_get_block_size(MCRYPT td);
+WIN32DLL_DEFINE int __mcrypt_get_block_size(MCRYPT td);
+WIN32DLL_DEFINE int mcrypt_enc_get_algo_iv_size(MCRYPT td);
+WIN32DLL_DEFINE int mcrypt_enc_get_iv_size(MCRYPT td);
+WIN32DLL_DEFINE int mcrypt_enc_get_key_size(MCRYPT td);
+WIN32DLL_DEFINE int* mcrypt_enc_get_supported_key_sizes(MCRYPT td, int* out_size);
+WIN32DLL_DEFINE int mcrypt_enc_is_block_algorithm(MCRYPT td);
+WIN32DLL_DEFINE char *mcrypt_enc_get_algorithms_name(MCRYPT td);
+WIN32DLL_DEFINE int init_mcrypt(MCRYPT td, void*buf, const void *, int, const void *);
+WIN32DLL_DEFINE int mcrypt(MCRYPT td, void* buf, void *a, int b);
+WIN32DLL_DEFINE int mdecrypt(MCRYPT td, void* buf, void *a, int b);
+WIN32DLL_DEFINE char *mcrypt_enc_get_modes_name(MCRYPT td);
+WIN32DLL_DEFINE int mcrypt_enc_is_block_mode(MCRYPT td);
+WIN32DLL_DEFINE int mcrypt_enc_mode_has_iv(MCRYPT td);
+WIN32DLL_DEFINE int mcrypt_enc_is_block_algorithm_mode(MCRYPT td);
+WIN32DLL_DEFINE int mcrypt_module_algorithm_version(const char *algorithm, const char *a_directory);
+WIN32DLL_DEFINE int mcrypt_module_mode_version(const char *mode, const char *m_directory);
+WIN32DLL_DEFINE int mcrypt_get_size(MCRYPT td);
 
 
 #define MCRYPT_UNKNOWN_ERROR -1

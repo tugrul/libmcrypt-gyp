@@ -3,7 +3,6 @@
         {
             'target_name': 'libmcrypt',
             'type': 'static_library',
-            'msvs_guid': '6a12df1b-cf7c-4a5d-a7e5-e74c8fd7f863',
             'defines': [
                 'HAVE_CONFIG_H',
                 'LIBDIR="modules/algorithms/:modules/modes/"'
@@ -12,6 +11,24 @@
                 '.',
                 'lib/',
                 'include/'
+            ],
+            'conditions': [
+                ['OS=="win"', {
+                        'defines': [
+                            'WIN32'
+                        ]
+                    }, { # OS != "win",
+                        'defines': [
+                            'HAVE_STRINGS_H',
+                            'HAVE_UNISTD_H',
+                            'HAVE_ENDIAN_H',
+                            'HAVE_BYTESWAP_H',
+                            'HAVE_DIRENT_H',
+                            'HAVE_SYS_MMAN_H',
+                            'HAVE_MLOCK'
+                        ]
+                    }
+                ]
             ],
             'sources': [
                 'modules/algorithms/3-way.c',

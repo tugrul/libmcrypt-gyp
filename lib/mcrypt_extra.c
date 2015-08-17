@@ -24,8 +24,8 @@
 #include <xmemory.h>
 #include <mcrypt_internal.h>
 
-int mcrypt_algorithm_module_ok(const char *file, const char *directory);
-int mcrypt_mode_module_ok(const char *file, const char *directory);
+WIN32DLL_DEFINE int mcrypt_algorithm_module_ok(const char *file, const char *directory);
+WIN32DLL_DEFINE int mcrypt_mode_module_ok(const char *file, const char *directory);
 
 void *mcrypt_dlopen(mcrypt_dlhandle * handle, const char *a_directory,
 		    const char *m_directory, const char *filename);
@@ -34,7 +34,8 @@ void *mcrypt_dlopen(mcrypt_dlhandle * handle, const char *a_directory,
 # define MAXPATHLEN 256
 #endif
 
-WIN32DLL_DEFINE char *mcrypt_readdir(DIR * dirstream)
+#ifndef WIN32
+char* mcrypt_readdir(DIR* dirstream)
 {
 
 	char *result;
@@ -59,6 +60,7 @@ WIN32DLL_DEFINE char *mcrypt_readdir(DIR * dirstream)
 	return result;
 
 }
+#endif
 
 extern const mcrypt_preloaded mps[];
 
@@ -116,6 +118,7 @@ WIN32DLL_DEFINE char **mcrypt_list_algorithms(const char *libdir,
 		return filename;
 	}
 
+    #ifndef WIN32
 	for (;;) {
 		dirname = mcrypt_readdir(pdir);
 		if (dirname != NULL) {
@@ -158,6 +161,7 @@ WIN32DLL_DEFINE char **mcrypt_list_algorithms(const char *libdir,
 			free(dirname);
 		} else break;
 	}
+    #endif
 
 
 	closedir(pdir);
@@ -224,6 +228,7 @@ WIN32DLL_DEFINE char **mcrypt_list_modes(const char *libdir, int *size)
 		return filename;
 	}
 
+    #ifndef WIN32
 	for (;;) {
 
 		dirname = mcrypt_readdir(pdir);
@@ -268,7 +273,8 @@ WIN32DLL_DEFINE char **mcrypt_list_modes(const char *libdir, int *size)
 		}
 
 	}
-
+    #endif
+    
 	closedir(pdir);
 #endif
 

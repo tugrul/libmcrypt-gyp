@@ -40,7 +40,7 @@
 /* #define USE_IV */
 /* IV was an mcrypt extension */
 
-void _mcrypt_encrypt(arcfour_key * key, byte * buffer_ptr, int buffer_len);
+WIN32DLL_DEFINE void _mcrypt_encrypt(arcfour_key * key, byte * buffer_ptr, int buffer_len);
 
 /* key is the state that should be allocated by the caller */
 #define STATE key->state

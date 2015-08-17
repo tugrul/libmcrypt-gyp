@@ -35,7 +35,7 @@ extern const mcrypt_preloaded mps[];
 
 static int mcrypt_strcmp( const char* str1, const char* str2) {
 int i;
-int len;
+size_t len;
 	if (strlen(str1)!=strlen(str2)) return -1;
 	len = strlen(str1);
 
