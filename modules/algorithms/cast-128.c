@@ -167,6 +167,8 @@ WIN32DLL_DEFINE
 	/* Copy key to workspace x */
 	for (i = 0; i < 4; i++) {
 		x[i] = 0;
+        z[i] = 0;
+        t[i] = 0;
 		if ((i * 4 + 0) < keybytes)
 			x[i] = (u32) rawkey[i * 4 + 0] << 24;
 		if ((i * 4 + 1) < keybytes)
@@ -335,8 +337,8 @@ return "CAST-128";
 WIN32DLL_DEFINE int _mcrypt_self_test()
 {
 	char *keyword;
-	unsigned char plaintext[16];
-	unsigned char ciphertext[16];
+	char plaintext[16];
+	char ciphertext[16];
 	int blocksize = _mcrypt_get_block_size(), j;
 	void *key;
 	unsigned char cipher_tmp[200];

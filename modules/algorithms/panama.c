@@ -328,7 +328,7 @@ static void pan_pull(word32 * restrict In,	/* input array                   */
 	      PAN_BUFFER * restrict buffer,	/* LFSR buffer                   */
 	      PAN_STATE * restrict state)
 {				/* 17-word finite-state machine  */
-	int i;
+	unsigned int i;
 
 	word32 regs(0), regs(1), regs(2), regs(3), regs(4);
 	word32 regs(5), regs(6), regs(7), regs(8), regs(9);
@@ -420,7 +420,7 @@ static void pan_push(word32 * restrict In,	/* input array                   */
 	      PAN_BUFFER * restrict buffer,	/* LFSR buffer                   */
 	      PAN_STATE * restrict state)
 {				/* 17-word finite-state machine  */
-	int i;
+	unsigned int i;
 
 	word32 regs(0), regs(1), regs(2), regs(3), regs(4);
 	word32 regs(5), regs(6), regs(7), regs(8), regs(9);
@@ -518,10 +518,8 @@ WIN32DLL_DEFINE
     int _mcrypt_set_key(PANAMA_KEY * pan_key, char *in_key, int keysize,
 			char *init_vec, int vecsize)
 {
-	byte key[32];
 	int keyblocks = (8 * keysize) / (PAN_STAGE_SIZE * WORDLENGTH);
 	int vecblocks = (8 * vecsize) / (PAN_STAGE_SIZE * WORDLENGTH);
-	int i;
 
 	pan_key->keymat = (void*) pan_key->wkeymat;
 
@@ -627,8 +625,8 @@ return "PANAMA";
 WIN32DLL_DEFINE int _mcrypt_self_test()
 {
 	char *keyword;
-	unsigned char plaintext[20];
-	unsigned char ciphertext[20];
+	char plaintext[20];
+	char ciphertext[20];
 	int blocksize = 20, j;
 	void *key;
 	unsigned char cipher_tmp[200];

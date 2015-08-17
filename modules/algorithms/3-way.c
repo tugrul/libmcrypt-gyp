@@ -69,7 +69,7 @@ void mu(word32 * a)
 	a[2] = b[2];
 }
 
-void gamma(word32 * a)
+void threeway_gamma(word32 * a)
 {				/* the nonlinear step */
 	word32 b[3];
 
@@ -130,7 +130,7 @@ void rho(word32 * a)
 {				/* the round function       */
 	theta(a);
 	pi_1(a);
-	gamma(a);
+	threeway_gamma(a);
 	pi_2(a);
 }
 
@@ -285,8 +285,8 @@ return "3-WAY";
 WIN32DLL_DEFINE int _mcrypt_self_test()
 {
 	char *keyword;
-	unsigned char plaintext[16];
-	unsigned char ciphertext[16];
+	char plaintext[16];
+	char ciphertext[16];
 	int blocksize = _mcrypt_get_block_size(), j;
 	void *key;
 	unsigned char cipher_tmp[200];

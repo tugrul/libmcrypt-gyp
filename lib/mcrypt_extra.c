@@ -65,14 +65,18 @@ extern const mcrypt_preloaded mps[];
 WIN32DLL_DEFINE char **mcrypt_list_algorithms(const char *libdir,
 					      int *size)
 {
+    #ifdef USE_LTDL
 	DIR *pdir;
 	char directory[512];
 	char *dirname;
-	char **filename = NULL, *ptr;
-	int tmpsize, i = 0;
-
-
+    char *ptr;
+    int tmpsize;
+    #endif
+	char **filename = NULL;
+    int i = 0;
 	*size = 0;
+
+    
 
 	while (mps[i].name != 0 || mps[i].address != 0) {
 		if (mps[i].name != NULL && mps[i].address == NULL) {
@@ -172,11 +176,14 @@ WIN32DLL_DEFINE char **mcrypt_list_algorithms(const char *libdir,
 
 WIN32DLL_DEFINE char **mcrypt_list_modes(const char *libdir, int *size)
 {
+    #ifdef USE_LTDL
 	DIR *pdir;
 	char directory[512];
 	char *dirname;
-	char **filename = NULL, *ptr;
+    char *ptr;
 	int tmpsize;
+    #endif
+	char **filename = NULL;
 	int i = 0;
 
 	*size = 0;
@@ -304,7 +311,9 @@ WIN32DLL_DEFINE
 	rr = mcrypt_dlopen(&_handle, directory, NULL, file);
 
 	if (!rr) {
+        #ifdef USE_LTDL
 		lt_dlexit();
+        #endif
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
@@ -312,16 +321,19 @@ WIN32DLL_DEFINE
 	_version = mcrypt_dlsym(_handle, "_mcrypt_algorithm_version");
 
 	if (_version == NULL) {
+        #ifdef USE_LTDL
 		mcrypt_dlclose(_handle);
 		lt_dlexit();
+        #endif
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
 	ret = _version();
 
+    #ifdef USE_LTDL
 	mcrypt_dlclose(_handle);
-
 	lt_dlexit();
+    #endif
 
 	return ret;
 
@@ -345,7 +357,9 @@ WIN32DLL_DEFINE
 
 	rr = mcrypt_dlopen(&_handle, directory, NULL, file);
 	if (!rr) {
+        #ifdef USE_LTDL
 		lt_dlexit();
+        #endif
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
@@ -353,15 +367,19 @@ WIN32DLL_DEFINE
 	_version = mcrypt_dlsym(_handle, "_mcrypt_mode_version");
 
 	if (_version == NULL) {
+        #ifdef USE_LTDL
 		mcrypt_dlclose(_handle);
 		lt_dlexit();
+        #endif
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
 	ret = _version();
 
+    #ifdef USE_LTDL
 	mcrypt_dlclose(_handle);
 	lt_dlexit();
+    #endif
 
 	return ret;
 

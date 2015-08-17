@@ -419,7 +419,7 @@ static const word32 pi[] = {
 };
 
 
-static short initialize_blowfish(blf_ctx * c, unsigned char key[],
+static short initialize_blowfish(blf_ctx * c, char key[],
 				 short keybytes)
 {
 	short i, j;
@@ -509,8 +509,8 @@ return "Blowfish";
 WIN32DLL_DEFINE int _mcrypt_self_test()
 {
 	char *keyword;
-	unsigned char plaintext[16];
-	unsigned char ciphertext[16];
+	char plaintext[16];
+	char ciphertext[16];
 	int blocksize = _mcrypt_get_block_size(), j;
 	void *key;
 	unsigned char cipher_tmp[200];

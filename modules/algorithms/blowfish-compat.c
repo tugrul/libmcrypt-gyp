@@ -149,7 +149,7 @@ WIN32DLL_DEFINE void _mcrypt_decrypt(blf_ctx * c, word32 * x)
 }
 
 
-static short initialize_blowfish(blf_ctx * c, byte key[], short keybytes)
+static short initialize_blowfish(blf_ctx * c, char key[], short keybytes)
 {
 	short i, j;
 	word32 data, datarl[2];
@@ -601,8 +601,8 @@ return "Blowfish";
 WIN32DLL_DEFINE int _mcrypt_self_test()
 {
 	char *keyword;
-	unsigned char plaintext[16];
-	unsigned char ciphertext[16];
+	char plaintext[16];
+	char ciphertext[16];
 	int blocksize = _mcrypt_get_block_size(), j;
 	void *key;
 	unsigned char cipher_tmp[200];

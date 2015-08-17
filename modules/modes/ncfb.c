@@ -263,11 +263,8 @@ void xor_stuff_de( nCFB_BUFFER *buf, void* akey, void (*func)(void*,void*), byte
 int _mcrypt( nCFB_BUFFER* buf,void *plaintext, int len, int blocksize, void* akey, void (*func)(void*,void*), void (*func2)(void*,void*))
 {				/* plaintext is n*blocksize bytes (nbit cfb) */
 	byte* plain;
-	int i, j=0;
-	void (*_mcrypt_block_encrypt) (void *, void *);
+	int j=0;
 	int modlen;
-	
-	_mcrypt_block_encrypt = func;
 
 	plain = plaintext;
 	for (j = 0; j < len / blocksize; j++) {
@@ -288,11 +285,8 @@ int _mcrypt( nCFB_BUFFER* buf,void *plaintext, int len, int blocksize, void* ake
 int _mdecrypt( nCFB_BUFFER* buf,void *plaintext, int len, int blocksize, void* akey, void (*func)(void*,void*), void (*func2)(void*,void*))
 {				/* plaintext is n*blocksize bytes (nbit cfb) */
 	byte* plain;
-	int i, j=0;
-	void (*_mcrypt_block_encrypt) (void *, void *);
+	int j=0;
 	int modlen;
-	
-	_mcrypt_block_encrypt = func;
 
 	plain = plaintext;
 	for (j = 0; j < len / blocksize; j++) {

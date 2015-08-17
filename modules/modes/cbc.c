@@ -103,7 +103,8 @@ int _mcrypt( CBC_BUFFER* buf, void *plaintext, int len, int blocksize, void* ake
 {
 	word32 *fplain = plaintext;
 	word32 *plain;
-	int i, j; 
+	unsigned int i;
+    int j; 
 	void (*_mcrypt_block_encrypt) (void *, void *);
 
 	_mcrypt_block_encrypt = func;
@@ -131,7 +132,8 @@ int _mdecrypt( CBC_BUFFER* buf, void *ciphertext, int len, int blocksize,void* a
 {
 	word32 *cipher;
 	word32 *fcipher = ciphertext;
-	int i, j; 
+	unsigned int i;
+    int j; 
 	void (*_mcrypt_block_decrypt) (void *, void *);
 
 	_mcrypt_block_decrypt = func2;

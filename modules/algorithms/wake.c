@@ -310,8 +310,8 @@ return "WAKE";
 WIN32DLL_DEFINE int _mcrypt_self_test()
 {
 	unsigned char *keyword;
-	unsigned char plaintext[43];
-	unsigned char ciphertext[43];
+	char plaintext[43];
+	char ciphertext[43];
 	int blocksize = 43, j;
 	void *key, *key2;
 	unsigned char cipher_tmp[200];

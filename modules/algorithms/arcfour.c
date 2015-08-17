@@ -52,14 +52,17 @@ WIN32DLL_DEFINE
 {
 	register int tmp, j, i;
 	byte *state = STATE;
+    #ifdef USE_IV
 	int ivindex;
+    ivindex = 0;
+    #endif
 
 	for (i = 0; i < 256; i++)
 		state[i] = i;
 
 	I = 0;
 	J = 0;
-	ivindex = 0;
+	
 
 	for (j = i = 0; i < 256; i++) {
 		j += state[i] + key_data[i % key_len];
@@ -149,8 +152,8 @@ return "RC4";
 WIN32DLL_DEFINE int _mcrypt_self_test()
 {
 	char *keyword;
-	unsigned char plaintext[20];
-	unsigned char ciphertext[20];
+	char plaintext[20];
+	char ciphertext[20];
 	int blocksize = 20, j;
 	void *key;
 	unsigned char cipher_tmp[200];

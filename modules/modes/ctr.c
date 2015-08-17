@@ -195,8 +195,7 @@ void xor_stuff( CTR_BUFFER *buf, void* akey, void (*func)(void*,void*), byte* pl
 int _mcrypt( CTR_BUFFER* buf,void *plaintext, int len, int blocksize, void* akey, void (*func)(void*,void*), void (*func2)(void*,void*))
 {				/* plaintext can be any size */
 	byte *plain;
-	word32 *fplain = plaintext;
-	int i, j=0;
+	int j=0;
 	int modlen;
 
 	plain = plaintext;

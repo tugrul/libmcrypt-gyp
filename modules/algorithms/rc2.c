@@ -254,8 +254,8 @@ return "RC2";
 WIN32DLL_DEFINE int _mcrypt_self_test()
 {
 	char *keyword;
-	unsigned char plaintext[16];
-	unsigned char ciphertext[16];
+	char plaintext[16];
+	char ciphertext[16];
 	int blocksize = _mcrypt_get_block_size(), j;
 	void *key;
 	unsigned char cipher_tmp[200];

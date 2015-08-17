@@ -82,13 +82,14 @@ char name[MAX_MOD_SIZE];
 	return NULL;
 }
 
+#ifdef USE_LTDL
 void mcrypt_dlclose( mcrypt_dlhandle handle) {
-void* mod = handle.handle;
-
+    void* mod = handle.handle;
 	if (mod!=MCRYPT_INTERNAL_HANDLER && mod!=NULL)
 		lt_dlclose(mod);
 	handle.handle = NULL;
 }
+#endif
 
 lt_ptr mcrypt_dlsym( mcrypt_dlhandle handle, char* str) {
 void* mod;
@@ -107,11 +108,14 @@ int mcrypt_module_close(MCRYPT td)
 {
 	if (td==NULL) return MCRYPT_UNKNOWN_ERROR;
 	
+    #ifdef USE_LTDL
 	mcrypt_dlclose(td->algorithm_handle);
 	mcrypt_dlclose(td->mode_handle);
+    
 	if (lt_dlexit() != 0) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
+    #endif
 
 	td->m_encrypt = NULL;
 	td->a_encrypt = NULL;
@@ -154,7 +158,9 @@ void* mcrypt_dlopen ( mcrypt_dlhandle* handle, const char* a_directory, const ch
 	}
 	strncat( paths, LIBDIR, 512);
 
+    #ifdef USE_LTDL
 	lt_dlsetsearchpath(paths);
+    #endif
 
 	handle->handle = lt_dlopenext(filename);
 
@@ -174,9 +180,11 @@ MCRYPT mcrypt_module_open(const char *algorithm,
 	td = calloc(1, sizeof(CRYPT_STREAM));
 	if (td==NULL) return MCRYPT_FAILED;
 
+    #ifdef USE_LTDL
 	if (lt_dlinit() != 0) {
 		return MCRYPT_FAILED;
 	}
+    #endif
 
 	ret = mcrypt_dlopen( &td->algorithm_handle, a_directory, m_directory, algorithm);
 	if (ret == NULL) {
@@ -186,7 +194,9 @@ MCRYPT mcrypt_module_open(const char *algorithm,
 			fputs("\n", stderr);
 		}
 		free(td);
+        #ifdef USE_LTDL
 		lt_dlexit();
+        #endif
 		return MCRYPT_FAILED;
 	}
 
@@ -198,9 +208,13 @@ MCRYPT mcrypt_module_open(const char *algorithm,
 			fputs( err, stderr);
 			fputs( "\n", stderr);
 		}
+        #ifdef USE_LTDL
 		mcrypt_dlclose(td->algorithm_handle);
+        #endif
 		free(td);
+        #ifdef USE_LTDL
 		lt_dlexit();
+        #endif
 		return MCRYPT_FAILED;
 	}
 
@@ -218,9 +232,13 @@ MCRYPT mcrypt_module_open(const char *algorithm,
 			fputs( err, stderr);
 			fputs( "\n", stderr);
 		}
+        #ifdef USE_LTDL
 		mcrypt_dlclose(td->algorithm_handle);
+        #endif
 		free(td);
+        #ifdef USE_LTDL
 		lt_dlexit();
+        #endif
 		return MCRYPT_FAILED;
 	}
 
@@ -632,9 +650,11 @@ int mcrypt_module_self_test(const char *algorithm, const char *a_directory)
 	int (*_self_test) (void);
 	const char* error;
 
+    #ifdef USE_LTDL
 	if (lt_dlinit() != 0) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
+    #endif
 
 	rr = mcrypt_dlopen(&_handle, a_directory, NULL, algorithm);
 
@@ -644,23 +664,30 @@ int mcrypt_module_self_test(const char *algorithm, const char *a_directory)
 			fputs( error, stderr);
 			fputs("\n", stderr);
 		}
+        #ifdef USE_LTDL
 		lt_dlexit();
+        #endif
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
 	_self_test = mcrypt_dlsym(_handle, "_mcrypt_self_test");
 	if (_self_test == NULL) {
+        #ifdef USE_LTDL
 		mcrypt_dlclose(_handle);
 		lt_dlexit();
+        #endif
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 	
 	i = _self_test();
 
-	mcrypt_dlclose(_handle);
+    #ifdef USE_LTDL
+    mcrypt_dlclose(_handle);
+    
 	if (lt_dlexit() != 0) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
+    #endif
 
 	return i;
 }
@@ -674,9 +701,11 @@ int mcrypt_module_algorithm_version(const char *algorithm, const char *a_directo
 	const char* error;
 	void* rr;
 	
+    #ifdef USE_LTDL
 	if (lt_dlinit() != 0) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
+    #endif
 
 	rr = mcrypt_dlopen(&_handle, a_directory, NULL, algorithm);
 	if (!rr) {
@@ -685,23 +714,29 @@ int mcrypt_module_algorithm_version(const char *algorithm, const char *a_directo
 			fputs( error, stderr);
 			fputs("\n", stderr);
 		}
+        #ifdef USE_LTDL
 		lt_dlexit();
+        #endif
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
 	_version = mcrypt_dlsym(_handle, "_mcrypt_algorithm_version");
 	if (_version==NULL) {
+        #ifdef USE_LTDL
 		mcrypt_dlclose(_handle);
 		lt_dlexit();
+        #endif
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
 	i = _version();
 
-	mcrypt_dlclose(_handle);
+	#ifdef USE_LTDL
+    mcrypt_dlclose(_handle);
 	if (lt_dlexit() != 0) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
+    #endif
 
 	return i;
 }
@@ -715,9 +750,11 @@ int mcrypt_module_mode_version(const char *mode, const char *m_directory)
 	const char* error;
 	void * rr;
 
+    #ifdef USE_LTDL
 	if (lt_dlinit() != 0) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
+    #endif
 
 	rr = mcrypt_dlopen( &_handle, m_directory, NULL, mode);
 	if (!rr) {
@@ -726,23 +763,29 @@ int mcrypt_module_mode_version(const char *mode, const char *m_directory)
 			fputs(error, stderr);
 			fputs("\n", stderr);
 		}
+        #ifdef USE_LTDL
 		lt_dlexit();
+        #endif
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
 	_version = mcrypt_dlsym( _handle, "_mcrypt_mode_version");
 	if (_version==NULL) {
+        #ifdef USE_LTDL
 		mcrypt_dlclose(_handle);
 		lt_dlexit();
+        #endif
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
 	i = _version();
 
+    #ifdef USE_LTDL
 	mcrypt_dlclose(_handle);
 	if (lt_dlexit() != 0) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
+    #endif
 
 	return i;
 }
@@ -756,9 +799,11 @@ int mcrypt_module_is_block_algorithm(const char *algorithm, const char *a_direct
 	const char* error;
 	void * rr;
 	
+    #ifdef USE_LTDL
 	if (lt_dlinit() != 0) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
+    #endif
 
 	rr = mcrypt_dlopen( &_handle, a_directory, NULL, algorithm);
 	if (!rr) {
@@ -767,23 +812,29 @@ int mcrypt_module_is_block_algorithm(const char *algorithm, const char *a_direct
 			fputs( error, stderr);
 			fputs("\n", stderr);
 		}
+        #ifdef USE_LTDL
 		lt_dlexit();
+        #endif
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
 	_is_block_algorithm = mcrypt_dlsym(_handle, "_is_block_algorithm");
 	if (_is_block_algorithm==NULL) {
+        #ifdef USE_LTDL
 		mcrypt_dlclose(_handle);
 		lt_dlexit();
+        #endif
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
 	i = _is_block_algorithm();
 
+    #ifdef USE_LTDL
 	mcrypt_dlclose(_handle);
 	if (lt_dlexit() != 0) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
+    #endif
 
 	return i;
 }
@@ -797,9 +848,11 @@ int mcrypt_module_is_block_algorithm_mode(const char *mode, const char *m_direct
 	const char* error;
 	void * rr;
 
+    #ifdef USE_LTDL
 	if (lt_dlinit() != 0) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
+    #endif
 
 	rr = mcrypt_dlopen( &_handle, m_directory, NULL, mode);
 	if (!rr) {
@@ -808,23 +861,29 @@ int mcrypt_module_is_block_algorithm_mode(const char *mode, const char *m_direct
 			fputs( error, stderr);
 			fputs("\n", stderr);
 		}
+        #ifdef USE_LTDL
 		lt_dlexit();
+        #endif
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
 	_is_a_block_mode = mcrypt_dlsym(_handle, "_is_block_algorithm_mode");
 	if (_is_a_block_mode==NULL) {
+        #ifdef USE_LTDL
 		mcrypt_dlclose(_handle);
 		lt_dlexit();
+        #endif
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
 	i = _is_a_block_mode();
 
+    #ifdef USE_LTDL
 	mcrypt_dlclose(_handle);
 	if (lt_dlexit() != 0) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
+    #endif
 
 	return i;
 }
@@ -838,9 +897,11 @@ int mcrypt_module_is_block_mode(const char *mode, const char *m_directory)
 	int (*_is_block_mode) (void);
 	const char* error;
 
+    #ifdef USE_LTDL
 	if (lt_dlinit() != 0) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
+    #endif
 
 	rr = mcrypt_dlopen( &_handle, m_directory, NULL, mode);
 	if (!rr) {
@@ -849,23 +910,29 @@ int mcrypt_module_is_block_mode(const char *mode, const char *m_directory)
 			fputs( error, stderr);
 			fputs("\n", stderr);
 		}
+        #ifdef USE_LTDL
 		lt_dlexit();
+        #endif
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
 	_is_block_mode = mcrypt_dlsym(_handle, "_is_block_mode");
 	if (_is_block_mode==NULL) {
+        #ifdef USE_LTDL
 		mcrypt_dlclose(_handle);
 		lt_dlexit();
+        #endif
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
 	i = _is_block_mode();
 
+    #ifdef USE_LTDL
 	mcrypt_dlclose(_handle);
 	if (lt_dlexit() != 0) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
+    #endif
 
 	return i;
 }
@@ -879,9 +946,11 @@ int mcrypt_module_get_algo_block_size(const char *algorithm, const char *a_direc
 	const char* error;
 	void * rr;
 
+    #ifdef USE_LTDL
 	if (lt_dlinit() != 0) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
+    #endif
 
 	rr = mcrypt_dlopen( &_handle, a_directory, NULL, algorithm);
 	if (!rr) {
@@ -890,23 +959,29 @@ int mcrypt_module_get_algo_block_size(const char *algorithm, const char *a_direc
 			fputs( error, stderr);
 			fputs("\n", stderr);
 		}
+        #ifdef USE_LTDL
 		lt_dlexit();
+        #endif
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
 	_get_block_size = mcrypt_dlsym(_handle, "_mcrypt_get_block_size");
 	if (_get_block_size==NULL) {
+        #ifdef USE_LTDL
 		mcrypt_dlclose(_handle);
 		lt_dlexit();
+        #endif
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
 	i = _get_block_size();
 
+    #ifdef USE_LTDL
 	mcrypt_dlclose(_handle);
 	if (lt_dlexit() != 0) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
+    #endif
 
 	return i;
 }
@@ -920,9 +995,11 @@ int mcrypt_module_get_algo_key_size(const char *algorithm, const char *a_directo
 	const char* error;
 	void * rr;
 
+    #ifdef USE_LTDL
 	if (lt_dlinit() != 0) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
+    #endif
 
 	rr = mcrypt_dlopen( &_handle, a_directory, NULL, algorithm);
 	if (!rr) {
@@ -931,23 +1008,29 @@ int mcrypt_module_get_algo_key_size(const char *algorithm, const char *a_directo
 			fputs( error, stderr);
 			fputs("\n", stderr);
 		}
+        #ifdef USE_LTDL
 		lt_dlexit();
+        #endif
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
 	_get_key_size = mcrypt_dlsym(_handle, "_mcrypt_get_key_size");
 	if (_get_key_size==NULL) {
+        #ifdef USE_LTDL
 		mcrypt_dlclose(_handle);
 		lt_dlexit();
+        #endif
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
 	i = _get_key_size();
 
+    #ifdef USE_LTDL
 	mcrypt_dlclose(_handle);
 	if (lt_dlexit() != 0) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
+    #endif
 
 	return i;
 }
@@ -964,11 +1047,12 @@ int *mcrypt_module_get_algo_supported_key_sizes(const char *algorithm,
 	const char* error;
 	void * rr;
 
-	
+	#ifdef USE_LTDL
 	if (lt_dlinit() != 0) {
 		*len = 0;
 		return NULL;
 	}
+    #endif
 
 	rr = mcrypt_dlopen( &_handle, a_directory, NULL, algorithm);
 	if (!rr) {
@@ -977,7 +1061,9 @@ int *mcrypt_module_get_algo_supported_key_sizes(const char *algorithm,
 			fputs( error, stderr);
 			fputs("\n", stderr);
 		}
+        #ifdef USE_LTDL
 		lt_dlexit();
+        #endif
 		*len = 0;
 		return NULL;
 	}
@@ -985,8 +1071,10 @@ int *mcrypt_module_get_algo_supported_key_sizes(const char *algorithm,
 	_mcrypt_get_key_sizes =
 	    mcrypt_dlsym(_handle, "_mcrypt_get_supported_key_sizes");
 	if (_mcrypt_get_key_sizes==NULL) {
+        #ifdef USE_LTDL
 		mcrypt_dlclose(_handle);
 		lt_dlexit();
+        #endif
 		*len = 0;
 		return NULL;
 	}
@@ -1000,10 +1088,12 @@ int *mcrypt_module_get_algo_supported_key_sizes(const char *algorithm,
 		}
 	} else *len = 0;
 	
+    #ifdef USE_LTDL
 	mcrypt_dlclose(_handle);
 	if (lt_dlexit() != 0) {
 		return NULL;
 	}
+    #endif
 
 	return ret_size;
 }

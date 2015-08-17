@@ -223,8 +223,8 @@ return "enigma";
 WIN32DLL_DEFINE int _mcrypt_self_test()
 {
 	char *keyword;
-	unsigned char plaintext[20];
-	unsigned char ciphertext[20];
+	char plaintext[20];
+	char ciphertext[20];
 	int blocksize = 20, j;
 	void *key;
 	unsigned char cipher_tmp[200];

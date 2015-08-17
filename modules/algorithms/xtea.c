@@ -94,10 +94,9 @@ WIN32DLL_DEFINE void _mcrypt_decrypt(word32 * k, word32 * v)
 #else
 	word32 y = byteswap32(v[0]), z = byteswap32(v[1]);
 #endif
-	word32 limit, sum = 0;
+	word32 sum = 0;
 	int N = (-ROUNDS);
 
-	limit = DELTA * N;
 #ifdef WORDS_BIGENDIAN
 
 	sum = DELTA * (-N);
@@ -175,8 +174,8 @@ return "xTEA";
 WIN32DLL_DEFINE int _mcrypt_self_test()
 {
 	char *keyword;
-	unsigned char plaintext[16];
-	unsigned char ciphertext[16];
+	char plaintext[16];
+	char ciphertext[16];
 	int blocksize = _mcrypt_get_block_size(), j;
 	void *key;
 	unsigned char cipher_tmp[200];

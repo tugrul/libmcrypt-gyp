@@ -85,7 +85,8 @@ WIN32DLL_DEFINE
     int _mcrypt_set_key(safer_key_t * key, safer_block_t * userkey,
 			int len)
 {
-	unsigned int i, j;
+    int i;
+	unsigned int j;
 	unsigned char ka[SAFER_BLOCK_LEN + 1];
 	unsigned char kb[SAFER_BLOCK_LEN + 1];
 	int nof_rounds = SAFER_SK64_DEFAULT_NOF_ROUNDS;
@@ -327,8 +328,8 @@ return "SAFER-SK64";
 WIN32DLL_DEFINE int _mcrypt_self_test()
 {
 	char *keyword;
-	unsigned char plaintext[16];
-	unsigned char ciphertext[16];
+	char plaintext[16];
+	char ciphertext[16];
 	int blocksize = _mcrypt_get_block_size(), j;
 	void *key;
 	unsigned char cipher_tmp[200];

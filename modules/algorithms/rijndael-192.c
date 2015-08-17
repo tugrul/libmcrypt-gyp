@@ -437,8 +437,8 @@ return "Rijndael-192";
 WIN32DLL_DEFINE int _mcrypt_self_test()
 {
 	char *keyword;
-	unsigned char plaintext[32];
-	unsigned char ciphertext[32];
+	char plaintext[32];
+	char ciphertext[32];
 	int blocksize = _mcrypt_get_block_size(), j;
 	void *key;
 	unsigned char cipher_tmp[200];

@@ -107,9 +107,9 @@ word32 init_done = 0;
 
 word32 ff_mult(word32 a, word32 b, word32 tpow, word32 mpol)
 {
-	word32 r, s, m;
+	word32 s, m;
 
-	r = s = 0;
+	s = 0;
 	m = (1 << tpow);
 
 	while (b) {
@@ -416,8 +416,8 @@ return "LOKI97";
 WIN32DLL_DEFINE int _mcrypt_self_test()
 {
 	char *keyword;
-	unsigned char plaintext[16];
-	unsigned char ciphertext[16];
+	char plaintext[16];
+	char ciphertext[16];
 	int blocksize = _mcrypt_get_block_size(), j;
 	void *key;
 	unsigned char cipher_tmp[200];

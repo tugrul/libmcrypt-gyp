@@ -84,6 +84,8 @@ int mcrypt_get_size(MCRYPT td);
 #define MCRYPT_UNKNOWN_ALGORITHM -6
 
 lt_ptr mcrypt_dlsym( mcrypt_dlhandle, char* str);
+#ifdef USE_LTDL
 void mcrypt_dlclose( mcrypt_dlhandle mod);
+#endif
 lt_ptr _mcrypt_search_symlist_lib(const char* name);
 lt_ptr _mcrypt_search_symlist_sym(mcrypt_dlhandle handle, const char* _name);
