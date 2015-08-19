@@ -35,15 +35,9 @@ typedef struct CRYPT_STREAM *MCRYPT;
 
 /* generic - high level functions. 
  */
-	MCRYPT mcrypt_module_open(char *algorithm,
-				  char *a_directory, char *mode,
-				  char *m_directory);
+	MCRYPT mcrypt_module_open(char *algorithm, char *mode);
 	int mcrypt_module_close(MCRYPT td);
 
-	/* returns 0 if the library has not been compiled with
-	 * dynamic module support.
- 	 */
-	int mcrypt_module_support_dynamic(void);
 
 /* returns thread descriptor */
 
@@ -103,36 +97,22 @@ typedef struct CRYPT_STREAM *MCRYPT;
 
 	/* Self test for the specified algorithm 
 	 */
-	int mcrypt_module_self_test(char *algorithm, char *a_directory);
+	int mcrypt_module_self_test(char *algorithm);
 
-	int mcrypt_module_is_block_algorithm(char *algorithm,
-					     char *a_directory);
-	int mcrypt_module_is_block_algorithm_mode(char *mode,
-						  char *m_directory);
-	int mcrypt_module_is_block_mode(char *mode, char *m_directory);
+	int mcrypt_module_is_block_algorithm(char *algorithm);
+	int mcrypt_module_is_block_algorithm_mode(char *mode);
+	int mcrypt_module_is_block_mode(char *mode);
 
-	int mcrypt_module_get_algo_key_size(char *algorithm,
-					    char *a_directory);
-	int mcrypt_module_get_algo_block_size(char *algorithm,
-					      char *a_directory);
+	int mcrypt_module_get_algo_key_size(char *algorithm);
+	int mcrypt_module_get_algo_block_size(char *algorithm);
 
-	int *mcrypt_module_get_algo_supported_key_sizes(char *algorithm,
-							char *a_directory,
-							int *len);
+	int *mcrypt_module_get_algo_supported_key_sizes(char *algorithm, int *len);
 
 	/* Checks the version of the specified module 
 	 */
-	int mcrypt_module_algorithm_version(char *algorithm,
-					    char *a_directory);
-	int mcrypt_module_mode_version(char *mode, char *a_directory);
+	int mcrypt_module_algorithm_version(char *algorithm);
+	int mcrypt_module_mode_version(char *mode);
 
-
-	/* for multithreaded applications: 
-	 */
-	int mcrypt_mutex_register ( void (*mutex_lock)(void) , 
-			void (*mutex_unlock)(void), 
-			void (*set_error)(const char*), 
-			const char* (*get_error)(void));
 
 	const char *
 		mcrypt_check_version( const char *);

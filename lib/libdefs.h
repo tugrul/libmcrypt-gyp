@@ -12,20 +12,10 @@
 # include <sys/types.h>
 #endif
 
-#include "win32_comp.h"
-
-#ifdef USE_LTDL
-# include <ltdl.h>
+#ifdef WIN32
+# define WIN32DLL_DEFINE __declspec( dllexport)
 #else
-# define lt_dlexit() 0
-# define lt_dlinit() 0
-# define lt_dlclose(x) 0
-# define lt_dlsym(x,y) 0
-# define lt_dlhandle void*
-# define lt_ptr_t void*
-# define lt_dlerror() 0
-# define lt_dlopenext(x) 0
-# define lt_dlsetsearchpath(x) 0
+# define WIN32DLL_DEFINE
 #endif
 
 #ifdef STDC_HEADERS

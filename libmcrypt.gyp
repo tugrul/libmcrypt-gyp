@@ -67,8 +67,6 @@
                 'lib/mcrypt_extra.c', 
                 'lib/mcrypt_modules.c', 
                 'lib/mcrypt_symb.c', 
-                'lib/mcrypt_threads.c', 
-                'lib/win32_comp.c', 
                 'lib/xmemory.c'
             ]
         }

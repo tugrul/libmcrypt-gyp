@@ -5,26 +5,14 @@
 
 /* Local Defines */
 
-#ifndef lt_ptr
-/* older version of libltdl */
-# define lt_ptr lt_ptr_t
-#endif
-
 typedef struct {
 	char* name;
-	lt_ptr address;
+	void* address;
 } mcrypt_preloaded;
 
 typedef struct {
-		lt_dlhandle handle;
-		char name[64];
-} mcrypt_dlhandle;
-
-#define MCRYPT_INTERNAL_HANDLER (void*)-1
-
-typedef struct {
-	mcrypt_dlhandle algorithm_handle;
-	mcrypt_dlhandle mode_handle;
+	char* algorithm_handle;
+	char* mode_handle;
 
 	/* Holds the algorithm's internal key */
 	byte *akey;
@@ -37,11 +25,11 @@ typedef struct {
 /* These were included to speed up encryption/decryption proccess, so
  * there is not need for resolving symbols every time.
  */
-	lt_ptr m_encrypt;
-	lt_ptr m_decrypt;
-	lt_ptr a_encrypt;
-	lt_ptr a_decrypt;
-	lt_ptr a_block_size;
+	void* m_encrypt;
+	void* m_decrypt;
+	void* a_encrypt;
+	void* a_decrypt;
+	void* a_block_size;
 } CRYPT_STREAM;
 
 typedef CRYPT_STREAM* MCRYPT;
@@ -71,8 +59,8 @@ WIN32DLL_DEFINE char *mcrypt_enc_get_modes_name(MCRYPT td);
 WIN32DLL_DEFINE int mcrypt_enc_is_block_mode(MCRYPT td);
 WIN32DLL_DEFINE int mcrypt_enc_mode_has_iv(MCRYPT td);
 WIN32DLL_DEFINE int mcrypt_enc_is_block_algorithm_mode(MCRYPT td);
-WIN32DLL_DEFINE int mcrypt_module_algorithm_version(const char *algorithm, const char *a_directory);
-WIN32DLL_DEFINE int mcrypt_module_mode_version(const char *mode, const char *m_directory);
+WIN32DLL_DEFINE int mcrypt_module_algorithm_version(const char *algorithm);
+WIN32DLL_DEFINE int mcrypt_module_mode_version(const char *mode);
 WIN32DLL_DEFINE int mcrypt_get_size(MCRYPT td);
 
 
@@ -83,9 +71,5 @@ WIN32DLL_DEFINE int mcrypt_get_size(MCRYPT td);
 #define MCRYPT_UNKNOWN_MODE -5
 #define MCRYPT_UNKNOWN_ALGORITHM -6
 
-lt_ptr mcrypt_dlsym( mcrypt_dlhandle, char* str);
-#ifdef USE_LTDL
-void mcrypt_dlclose( mcrypt_dlhandle mod);
-#endif
-lt_ptr _mcrypt_search_symlist_lib(const char* name);
-lt_ptr _mcrypt_search_symlist_sym(mcrypt_dlhandle handle, const char* _name);
+void* mcrypt_module_get_sym(const char*, const char*);
+int _mcrypt_search_symlist_lib(const char* name);

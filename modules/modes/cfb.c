@@ -160,12 +160,3 @@ int _mcrypt_mode_get_size () {return sizeof(CFB_BUFFER);}
 word32 _mcrypt_mode_version() {
 	return 20020310;
 }
-
-#ifdef WIN32
-# ifdef USE_LTDL
-WIN32DLL_DEFINE int main (void)
-{
-       /* empty main function to avoid linker error (see cygwin FAQ) */
-}
-# endif
-#endif

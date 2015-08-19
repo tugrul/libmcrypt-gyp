@@ -4,9 +4,6 @@
 /* Define to 1 if the `closedir' function returns void instead of `int'. */
 /* #undef CLOSEDIR_VOID */
 
-/* dlmutex */
-/* #undef DLMUTEX */
-
 /* Define to 1 if you have the <argz.h> header file. */
 #define HAVE_ARGZ_H 1
 
@@ -152,8 +149,6 @@
 /* Version number of package */
 #define VERSION "2.5.8"
 
-/* whether win32 environment */
-/* #undef WIN32 */
 
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */
