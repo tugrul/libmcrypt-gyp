@@ -56,6 +56,7 @@ int _mcrypt_search_symlist_lib(const char* name)
 
 	while( mps[i].name != 0 || mps[i].address != 0) {
 		if (mps[i].name == NULL || mps[i].address != NULL) {
+            i++;
             continue;
 		}
 
@@ -99,6 +100,8 @@ int mcrypt_module_close(MCRYPT td)
 {
 	if (td==NULL) return MCRYPT_UNKNOWN_ERROR;
 
+    free(td->algorithm_handle);
+    free(td->mode_handle);
 
 	td->m_encrypt = NULL;
 	td->a_encrypt = NULL;
@@ -119,15 +122,18 @@ MCRYPT mcrypt_module_open(const char *algorithm, const char *mode)
 	td = calloc(1, sizeof(CRYPT_STREAM));
 	if (td==NULL) return MCRYPT_FAILED;
 
-	if (_mcrypt_search_symlist_lib(algorithm)) {
+	if (!_mcrypt_search_symlist_lib(algorithm)) {
 		free(td);
 		return MCRYPT_FAILED;
 	}
 
-	if (_mcrypt_search_symlist_lib(mode)) {
+	if (!_mcrypt_search_symlist_lib(mode)) {
 		free(td);
 		return MCRYPT_FAILED;
 	}
+
+    td->algorithm_handle = strdup(algorithm);
+    td->mode_handle = strdup(mode);
 
 	td->a_encrypt = mcrypt_module_get_sym(td->algorithm_handle, "_mcrypt_encrypt");
 	td->a_decrypt = mcrypt_module_get_sym(td->algorithm_handle, "_mcrypt_decrypt");

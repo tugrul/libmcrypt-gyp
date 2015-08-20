@@ -499,7 +499,7 @@ static void f_rnd(int i, word32* blk, TWI* pkey, word32 t0, word32 t1)
 /* encrypt a block of text  */
 WIN32DLL_DEFINE void _mcrypt_encrypt(TWI * pkey, word32 * in_blk)
 {
-	word32 t0, t1, blk[4];
+	word32 t0 = 0, t1 = 0, blk[4];
 #ifdef WORDS_BIGENDIAN
 	blk[0] = byteswap32(in_blk[0]) ^ pkey->l_key[0];
 	blk[1] = byteswap32(in_blk[1]) ^ pkey->l_key[1];

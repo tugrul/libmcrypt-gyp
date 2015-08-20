@@ -333,7 +333,7 @@ WIN32DLL_DEFINE void _mcrypt_encrypt(RI * rinst, byte * buff)
 			    ROTL8(ftable[(byte) (x[rinst->fi[m]] >> 8)]) ^
 			    ROTL16(ftable
 				   [(byte) (x[rinst->fi[m + 1]] >> 16)]) ^
-			    ROTL24(ftable[x[rinst->fi[m + 2]] >> 24]);
+			    ROTL24(ftable[x[rinst->fi[m + 2]] >> 24]); // memory access problem
 		}
 		t = x;
 		x = y;
