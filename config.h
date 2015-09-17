@@ -4,6 +4,9 @@
 /* Define to 1 if the `closedir' function returns void instead of `int'. */
 /* #undef CLOSEDIR_VOID */
 
+/* dlmutex */
+/* #undef DLMUTEX */
+
 /* Define to 1 if you have the <argz.h> header file. */
 #define HAVE_ARGZ_H 1
 
@@ -11,19 +14,19 @@
 /* #undef HAVE_BCOPY */
 
 /* Define to 1 if you have the <byteswap.h> header file. */
-/* #define HAVE_BYTESWAP_H 1*/
+#define HAVE_BYTESWAP_H 1
 
 /* Define to 1 if you have the `bzero' function. */
 #define HAVE_BZERO 1
 
 /* Define to 1 if you have the <dirent.h> header file. */
-/* #define HAVE_DIRENT_H 1 */
+#define HAVE_DIRENT_H 1
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #define HAVE_DLFCN_H 1
 
 /* Define to 1 if you have the <endian.h> header file. */
-/* #define HAVE_ENDIAN_H 1*/
+#define HAVE_ENDIAN_H 1
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
@@ -51,7 +54,7 @@
 #define HAVE_MEMSET 1
 
 /* Define to 1 if you have the `mlock' function. */
-/* #define HAVE_MLOCK 1 */
+#define HAVE_MLOCK 1
 
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 /* #undef HAVE_NDIR_H */
@@ -79,7 +82,7 @@
 #define HAVE_STRDUP 1
 
 /* Define to 1 if you have the <strings.h> header file. */
-/*#define HAVE_STRINGS_H 1*/
+#define HAVE_STRINGS_H 1
 
 /* Define to 1 if you have the <string.h> header file. */
 #define HAVE_STRING_H 1
@@ -95,7 +98,7 @@
 /* #undef HAVE_SYS_ENDIAN_H */
 
 /* Define to 1 if you have the <sys/mman.h> header file. */
-/* #define HAVE_SYS_MMAN_H 1 */
+#define HAVE_SYS_MMAN_H 1
 
 /* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
    */
@@ -108,7 +111,7 @@
 #define HAVE_SYS_TYPES_H 1
 
 /* Define to 1 if you have the <unistd.h> header file. */
-/* #define HAVE_UNISTD_H 1*/
+#define HAVE_UNISTD_H 1
 
 /* Name of package */
 #define PACKAGE "libmcrypt"
@@ -135,7 +138,7 @@
 #define SIZEOF_UNSIGNED_INT 4
 
 /* The size of a `unsigned long int', as computed by sizeof. */
-#define SIZEOF_UNSIGNED_LONG_INT 4
+#define SIZEOF_UNSIGNED_LONG_INT 8
 
 /* The size of a `unsigned short int', as computed by sizeof. */
 #define SIZEOF_UNSIGNED_SHORT_INT 2
@@ -146,9 +149,14 @@
 /* dmalloc */
 /* #undef USE_DMALLOC */
 
+/* use libltdl */
+/* #undef USE_LTDL */
+
 /* Version number of package */
 #define VERSION "2.5.8"
 
+/* whether win32 environment */
+/* #undef WIN32 */
 
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */
