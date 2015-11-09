@@ -385,9 +385,9 @@ const mcrypt_mode_module mcrypt_mode_modules[] = {
         ctr_LTX__mcrypt_mode_version
     }, 
     {"ecb", 
+        ecb_LTX__init_mcrypt,
         ecb_LTX__mcrypt_set_state,
         ecb_LTX__mcrypt_get_state,
-        ecb_LTX__init_mcrypt,
         ecb_LTX__end_mcrypt,
         ecb_LTX__mcrypt,
         ecb_LTX__mdecrypt,
