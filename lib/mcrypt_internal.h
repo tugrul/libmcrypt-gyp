@@ -6,13 +6,40 @@
 /* Local Defines */
 
 typedef struct {
-	char* name;
-	void* address;
-} mcrypt_preloaded;
+    char* name;
+    int (*init) (void *, const void *, int, const void *, int);
+    int (*set_state) (void *, const void *, int);
+    int (*get_state) (void *, void *, int*);
+    int (*end) (void *);
+    int (*encrypt) (void *, void *, int, int, void *, void *, void*);
+    int (*decrypt) (void *, void *, int, int, void *, void *, void*);
+    int (*has_iv) (void);
+    int (*is_block_mode) (void);
+    int (*is_block_algo_mode) (void);
+    char *(*get_name) (void);
+    int (*get_size) (void);
+    word32 (*get_version) (void);
+} mcrypt_mode_module;
 
 typedef struct {
-	char* algorithm_handle;
-	char* mode_handle;
+    char* name;
+    void* set_key;
+    void* encrypt;
+    void* decrypt;
+    int (*get_size) (void);
+    int (*get_block_size) (void);
+    int (*is_block_algo) (void);
+    int (*get_key_size) (void);
+    int (*get_algo_iv_size) (void);
+    const int *(*get_supported_key_sizes) (int *);
+    const char *(*get_name) (void);
+    int (*self_test) (void);
+    word32 (*get_version) (void);
+} mcrypt_algo_module;
+
+typedef struct {
+	const mcrypt_algo_module* algo;
+	const mcrypt_mode_module* mode;
 
 	/* Holds the algorithm's internal key */
 	byte *akey;
@@ -22,14 +49,6 @@ typedef struct {
 	/* holds the key */
 	byte *keyword_given;
 
-/* These were included to speed up encryption/decryption proccess, so
- * there is not need for resolving symbols every time.
- */
-	void* m_encrypt;
-	void* m_decrypt;
-	void* a_encrypt;
-	void* a_decrypt;
-	void* a_block_size;
 } CRYPT_STREAM;
 
 typedef CRYPT_STREAM* MCRYPT;
@@ -62,7 +81,8 @@ WIN32DLL_DEFINE int mcrypt_enc_is_block_algorithm_mode(MCRYPT td);
 WIN32DLL_DEFINE int mcrypt_module_algorithm_version(const char *algorithm);
 WIN32DLL_DEFINE int mcrypt_module_mode_version(const char *mode);
 WIN32DLL_DEFINE int mcrypt_get_size(MCRYPT td);
-
+WIN32DLL_DEFINE int mcrypt_algorithm_module_ok(const char *name);
+WIN32DLL_DEFINE int mcrypt_mode_module_ok(const char *name);
 
 #define MCRYPT_UNKNOWN_ERROR -1
 #define MCRYPT_ALGORITHM_MODE_INCOMPATIBILITY -2
@@ -71,5 +91,7 @@ WIN32DLL_DEFINE int mcrypt_get_size(MCRYPT td);
 #define MCRYPT_UNKNOWN_MODE -5
 #define MCRYPT_UNKNOWN_ALGORITHM -6
 
-void* mcrypt_module_get_sym(const char*, const char*);
-int _mcrypt_search_symlist_lib(const char* name);
+
+const mcrypt_mode_module* mcrypt_module_get_mode(const char* name);
+const mcrypt_algo_module* mcrypt_module_get_algo(const char* name);
+

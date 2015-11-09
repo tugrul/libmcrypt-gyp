@@ -81,8 +81,8 @@ typedef struct CRYPT_STREAM *MCRYPT;
 	int *mcrypt_enc_get_supported_key_sizes(MCRYPT td, int *len);
 
 
-	char **mcrypt_list_algorithms(char *libdir, int *size);
-	char **mcrypt_list_modes(char *libdir, int *size);
+	char **mcrypt_list_algorithms(int *size);
+	char **mcrypt_list_modes(int *size);
 
 	/* Frees the memory allocated by the mcrypt_list_xxx() functions. 
 	 */

@@ -29,84 +29,46 @@
 # define fputs(x, y) 
 #endif
 
-extern const mcrypt_preloaded mps[];
+extern const mcrypt_mode_module mcrypt_mode_modules[9];
+extern const mcrypt_algo_module mcrypt_algo_modules[20];
 
-#define MAX_MOD_SIZE 1024
-
-static int mcrypt_strcmp( const char* str1, const char* str2)
+const mcrypt_algo_module* mcrypt_module_get_algo(const char* name)
 {
-    size_t i;
-    size_t len;
-
-	if (strlen(str1)!=strlen(str2)) return -1;
-	len = strlen(str1);
-
-	for (i = 0; i < len ;i++) {
-		if (str1[i]=='_' && str2[i]=='-') continue;
-		if (str2[i]=='_' && str1[i]=='-') continue;
-		if (str1[i]!=str2[i]) return -1;
-	}
-	
-	return 0;
-}
-
-int _mcrypt_search_symlist_lib(const char* name)
-{
-    size_t i = 0;
-
-	while( mps[i].name != 0 || mps[i].address != 0) {
-		if (mps[i].name == NULL || mps[i].address != NULL) {
-            i++;
-            continue;
-		}
-
-        if (mcrypt_strcmp(name, mps[i].name) == 0) {
-            return -1;
-        }
-        
-		i++;
-	}
-
-	return 0;
-}
-
-
-void* mcrypt_module_get_sym(const char* handle, const char* str)
-{
-    size_t i = 0;
-    char name[MAX_MOD_SIZE];
-
-	strcpy(name, handle);
-	strcat(name, "_LTX_");
-	strcat(name, str);
-
-	while( mps[i].name != 0 || mps[i].address != 0) {
-        if (mps[i].name == NULL) {
-            continue;
-        }
+    int size = sizeof(mcrypt_algo_modules) / sizeof(mcrypt_algo_module) - 1;
+    int i = 0;
     
-        if (mcrypt_strcmp(name, mps[i].name) == 0) {
-             return mps[i].address;
+    for (i = 0; i < size; i++) {
+        if (mcrypt_algo_modules[i].name != NULL 
+            && strcmp(mcrypt_algo_modules[i].name, name)) {
+            return &mcrypt_algo_modules[i];
         }
+    }
 
-		i++;
-	}
-    
-	return NULL;
+    return NULL;
 }
+
+const mcrypt_mode_module* mcrypt_module_get_mode(const char* name)
+{
+    int size = sizeof(mcrypt_mode_modules) / sizeof(mcrypt_mode_module) - 1;
+    int i = 0;
+    
+    for (i = 0; i < size; i++) {
+        if (mcrypt_mode_modules[i].name != NULL 
+            && strcmp(mcrypt_mode_modules[i].name, name)) {
+            return &mcrypt_mode_modules[i];
+        }
+    }
+
+    return NULL;
+}
+
 
 WIN32DLL_DEFINE
 int mcrypt_module_close(MCRYPT td)
 {
-	if (td==NULL) return MCRYPT_UNKNOWN_ERROR;
-
-    free(td->algorithm_handle);
-    free(td->mode_handle);
-
-	td->m_encrypt = NULL;
-	td->a_encrypt = NULL;
-	td->a_decrypt = NULL;
-	td->m_decrypt = NULL;
+	if (td == NULL) {
+        return MCRYPT_UNKNOWN_ERROR;
+    }
 
 	free(td);
 	
@@ -117,38 +79,22 @@ int mcrypt_module_close(MCRYPT td)
 WIN32DLL_DEFINE
 MCRYPT mcrypt_module_open(const char *algorithm, const char *mode)
 {
-	MCRYPT td;
+    MCRYPT td;
 	
 	td = calloc(1, sizeof(CRYPT_STREAM));
-	if (td==NULL) return MCRYPT_FAILED;
-
-	if (!_mcrypt_search_symlist_lib(algorithm)) {
+	if (td == NULL) {
+        return MCRYPT_FAILED;
+    }
+    
+    td->algo = mcrypt_module_get_algo(algorithm);
+    td->mode = mcrypt_module_get_mode(mode);
+    
+	if (td->algo == NULL || td->mode == NULL) {
 		free(td);
 		return MCRYPT_FAILED;
 	}
 
-	if (!_mcrypt_search_symlist_lib(mode)) {
-		free(td);
-		return MCRYPT_FAILED;
-	}
-
-    td->algorithm_handle = strdup(algorithm);
-    td->mode_handle = strdup(mode);
-
-	td->a_encrypt = mcrypt_module_get_sym(td->algorithm_handle, "_mcrypt_encrypt");
-	td->a_decrypt = mcrypt_module_get_sym(td->algorithm_handle, "_mcrypt_decrypt");
-	td->m_encrypt = mcrypt_module_get_sym(td->mode_handle, "_mcrypt");
-	td->m_decrypt = mcrypt_module_get_sym(td->mode_handle, "_mdecrypt");
-	td->a_block_size = mcrypt_module_get_sym(td->algorithm_handle, "_mcrypt_get_block_size");
-
-	if (td->a_encrypt == NULL || td->a_decrypt == NULL || td->m_encrypt == NULL ||
-		td->m_decrypt == NULL|| td->a_block_size == NULL) {
-		free(td);
-		return MCRYPT_FAILED;
-	}
-
-	if (mcrypt_enc_is_block_algorithm_mode(td) !=
-	    mcrypt_enc_is_block_algorithm(td)) {
+	if (mcrypt_enc_is_block_algorithm_mode(td) != mcrypt_enc_is_block_algorithm(td)) {
 		mcrypt_module_close(td);
 		return MCRYPT_FAILED;
 	}
@@ -156,32 +102,26 @@ MCRYPT mcrypt_module_open(const char *algorithm, const char *mode)
 	return td;
 }
 
-
-
 /* Modules' frontends */
 
 WIN32DLL_DEFINE
 int mcrypt_get_size(MCRYPT td)
 {
-	int (*_mcrypt_get_size) (void);
-
-	_mcrypt_get_size = mcrypt_module_get_sym(td->algorithm_handle, "_mcrypt_get_size");
-	if (_mcrypt_get_size == NULL) {
-		return MCRYPT_UNKNOWN_ERROR;
+	if (td->algo->get_size != NULL) {
+        return td->algo->get_size();
 	}
-	return _mcrypt_get_size();
+
+	return MCRYPT_UNKNOWN_ERROR;
 }
 
 WIN32DLL_DEFINE
 int mcrypt_mode_get_size(MCRYPT td)
 {
-	int (*_mcrypt_get_size) (void);
-
-	_mcrypt_get_size = mcrypt_module_get_sym(td->mode_handle, "_mcrypt_mode_get_size");
-	if (_mcrypt_get_size == NULL) {
-		return MCRYPT_UNKNOWN_ERROR;
+	if (td->mode->get_size != NULL) {
+        return td->mode->get_size();
 	}
-	return _mcrypt_get_size();
+
+	return MCRYPT_UNKNOWN_ERROR;
 }
 
 WIN32DLL_DEFINE
@@ -192,13 +132,13 @@ int mcrypt_set_key(MCRYPT td, void *a, const void *key, int keysize, const void 
 
 	if (mcrypt_enc_is_block_algorithm(td) == 0) {
 		/* stream */
-		__mcrypt_set_key_stream = mcrypt_module_get_sym(td->algorithm_handle, "_mcrypt_set_key");
+		__mcrypt_set_key_stream = td->algo->set_key;
 		if (__mcrypt_set_key_stream == NULL) {
 			return -2;
 		}
 		return __mcrypt_set_key_stream(a, key, keysize, iv, e);
 	} else {
-		__mcrypt_set_key_block = mcrypt_module_get_sym(td->algorithm_handle, "_mcrypt_set_key");
+		__mcrypt_set_key_block = td->algo->set_key;
 		if (__mcrypt_set_key_block == NULL) {
 			return -2;
 		}
@@ -209,48 +149,42 @@ int mcrypt_set_key(MCRYPT td, void *a, const void *key, int keysize, const void 
 WIN32DLL_DEFINE
 int mcrypt_enc_set_state(MCRYPT td, const void *iv, int size)
 {
-	int (*__mcrypt_set_state) (void *, const void *, int);
-
-
-	__mcrypt_set_state = mcrypt_module_get_sym(td->mode_handle, "_mcrypt_set_state");
-	if (__mcrypt_set_state==NULL) {
-		return MCRYPT_UNKNOWN_ERROR;
+	if (td->mode->set_state != NULL) {
+        return td->mode->set_state(td->abuf, iv, size);
 	}
-	return __mcrypt_set_state(td->abuf, iv, size);
+
+	return MCRYPT_UNKNOWN_ERROR;
 }
 
 WIN32DLL_DEFINE
 int mcrypt_enc_get_state(MCRYPT td, void *iv, int *size)
 {
-	int (*__mcrypt_get_state) (void *, void *, int*);
-
-	__mcrypt_get_state = mcrypt_module_get_sym(td->mode_handle, "_mcrypt_get_state");
-	if (__mcrypt_get_state==NULL) {
-		return MCRYPT_UNKNOWN_ERROR;
+	if (td->mode->get_state != NULL) {
+        return td->mode->get_state(td->abuf, iv, size);
 	}
-	return __mcrypt_get_state(td->abuf, iv, size);
+
+	return MCRYPT_UNKNOWN_ERROR;
 }
 
 
 WIN32DLL_DEFINE
 int mcrypt_enc_get_block_size(MCRYPT td)
 {
-	int (*_mcrypt_get_block_size) (void);
+    if (td->algo->get_block_size != NULL) {
+        return td->algo->get_block_size();
+	}
 
-	_mcrypt_get_block_size = td->a_block_size;
-	return _mcrypt_get_block_size();
+	return MCRYPT_UNKNOWN_ERROR;
 }
 
 WIN32DLL_DEFINE
 int mcrypt_get_algo_iv_size(MCRYPT td)
 {
-	int (*_mcrypt_get_algo_iv_size) (void);
-
-	_mcrypt_get_algo_iv_size = mcrypt_module_get_sym(td->algorithm_handle, "_mcrypt_get_algo_iv_size");
-	if (_mcrypt_get_algo_iv_size == NULL) {
-		return MCRYPT_UNKNOWN_ERROR;
+	if (td->algo->get_algo_iv_size != NULL) {
+        return td->algo->get_algo_iv_size();
 	}
-	return _mcrypt_get_algo_iv_size();
+
+	return MCRYPT_UNKNOWN_ERROR;
 }
 
 WIN32DLL_DEFINE
@@ -266,388 +200,365 @@ int mcrypt_enc_get_iv_size(MCRYPT td)
 WIN32DLL_DEFINE
 int mcrypt_enc_get_key_size(MCRYPT td)
 {
-	int (*_mcrypt_get_key_size) (void);
-
-	_mcrypt_get_key_size = mcrypt_module_get_sym(td->algorithm_handle, "_mcrypt_get_key_size");
-	if (_mcrypt_get_key_size == NULL) {
-		return MCRYPT_UNKNOWN_ERROR;
+	if (td->algo->get_key_size != NULL) {
+        return td->algo->get_key_size();		
 	}
-	return _mcrypt_get_key_size();
+
+	return MCRYPT_UNKNOWN_ERROR;
 }
 
 WIN32DLL_DEFINE
 int *mcrypt_enc_get_supported_key_sizes(MCRYPT td, int *len)
 {
-	int *(*_mcrypt_get_key_sizes) (int *);
-	int *size, *ret;
+	const int *size;
+    int *ret;
 
-	_mcrypt_get_key_sizes =
-	    mcrypt_module_get_sym(td->algorithm_handle, "_mcrypt_get_supported_key_sizes");
-	if (_mcrypt_get_key_sizes == NULL) {
+	if (td->algo->get_supported_key_sizes == NULL) {
 		*len = 0;
 		return NULL;
 	}
 
-	size = _mcrypt_get_key_sizes(len);
-	
+	size = td->algo->get_supported_key_sizes(len);
+
 	ret = NULL;
-	if (size!=NULL && (*len) != 0) {
+	if (size != NULL && (*len) != 0) {
 		ret = malloc( sizeof(int)*(*len));
-		if (ret==NULL) return NULL;
-		memcpy( ret, size, sizeof(int)*(*len));
+
+		if (ret == NULL) {
+            return NULL;
+        }
+
+		memcpy(ret, size, sizeof(int)*(*len));
 	}
+
 	return ret;
 }
 
 WIN32DLL_DEFINE
 int mcrypt_enc_is_block_algorithm(MCRYPT td)
 {
-	int (*_is_block_algorithm) (void);
-
-	_is_block_algorithm = mcrypt_module_get_sym(td->algorithm_handle, "_is_block_algorithm");
-	if (_is_block_algorithm == NULL) {
-		return MCRYPT_UNKNOWN_ERROR;
+	if (td->algo->is_block_algo != NULL) {
+        return td->algo->is_block_algo();
+		
 	}
 
-	return _is_block_algorithm();
+	return MCRYPT_UNKNOWN_ERROR;
 }
 
 WIN32DLL_DEFINE
 char *mcrypt_enc_get_algorithms_name(MCRYPT td)
 {
-	const char *(*_mcrypt_get_algorithms_name) (void);
-
-	_mcrypt_get_algorithms_name =
-	    mcrypt_module_get_sym(td->algorithm_handle, "_mcrypt_get_algorithms_name");
-	if (_mcrypt_get_algorithms_name == NULL) {
-		return NULL;
+	if (td->algo->get_name != NULL) {
+        return strdup(td->algo->get_name());		
 	}
 
-	return strdup(_mcrypt_get_algorithms_name());
+	return NULL;
 }
 
 WIN32DLL_DEFINE
 int init_mcrypt(MCRYPT td, void *buf, const void *key, int keysize, const void *iv)
 {
-	int (*_init_mcrypt) (void *, const void *, int, const void *, int);
-
-	_init_mcrypt = mcrypt_module_get_sym(td->mode_handle, "_init_mcrypt");
-	if (_init_mcrypt == NULL) {
-		return MCRYPT_UNKNOWN_ERROR;
+	if (td->mode->init != NULL) {
+        return td->mode->init(buf, key, keysize, iv, mcrypt_enc_get_block_size(td));
 	}
 
-	return _init_mcrypt(buf, key, keysize, iv, mcrypt_enc_get_block_size(td));
+	return MCRYPT_UNKNOWN_ERROR;
 }
 
 WIN32DLL_DEFINE
 int end_mcrypt(MCRYPT td, void *buf)
 {
-	int (*_end_mcrypt) (void *);
-
-	_end_mcrypt = mcrypt_module_get_sym(td->mode_handle, "_end_mcrypt");
-	if (_end_mcrypt == NULL) {
-		return MCRYPT_UNKNOWN_ERROR;
+	if (td->mode->end != NULL) {
+        return td->mode->end(buf);
 	}
 
-	return _end_mcrypt(buf);
+	return MCRYPT_UNKNOWN_ERROR;
 }
 
 WIN32DLL_DEFINE
 int mcrypt(MCRYPT td, void *buf, void *a, int b)
 {
-	int (*_mcrypt) (void *, void *, int, int, void *, void *, void*);
+    if (td->mode->encrypt != NULL) {
+        return td->mode->encrypt(buf, a, b, mcrypt_enc_get_block_size(td), td->akey,
+		       td->algo->encrypt, td->algo->decrypt);
+    }
 
-	_mcrypt = td->m_encrypt;
-
-	return _mcrypt(buf, a, b, mcrypt_enc_get_block_size(td), td->akey,
-		       td->a_encrypt, td->a_decrypt);
+	return MCRYPT_FAILED;
 }
 
 WIN32DLL_DEFINE
 int mdecrypt(MCRYPT td, void *buf, void *a, int b)
 {
-	int (*_mdecrypt) (void *, void *, int, int, void *, void *, void*);
+    if (td->mode->decrypt != NULL) {
+        return td->mode->decrypt(buf, a, b, mcrypt_enc_get_block_size(td),
+			 td->akey, td->algo->encrypt, td->algo->decrypt);
+    }
 
-	_mdecrypt = td->m_decrypt;
-	return _mdecrypt(buf, a, b, mcrypt_enc_get_block_size(td),
-			 td->akey, td->a_encrypt, td->a_decrypt);
+	return MCRYPT_FAILED;
 }
 
 WIN32DLL_DEFINE
 char *mcrypt_enc_get_modes_name(MCRYPT td)
 {
-	const char *(*_mcrypt_get_modes_name) (void);
+    if (td->mode->get_name != NULL) {
+        return strdup(td->mode->get_name());
+    }
 
-	_mcrypt_get_modes_name = mcrypt_module_get_sym(td->mode_handle, "_mcrypt_get_modes_name");
-	if (_mcrypt_get_modes_name == NULL) {
-		return NULL;
-	}
-
-	return strdup(_mcrypt_get_modes_name());
+	return NULL;
 }
 
 WIN32DLL_DEFINE
 int mcrypt_enc_is_block_mode(MCRYPT td)
 {
-	int (*_is_block_mode) (void);
-	
-	_is_block_mode = mcrypt_module_get_sym(td->mode_handle, "_is_block_mode");
-	if (_is_block_mode == NULL) {
-		return MCRYPT_UNKNOWN_ERROR;
-	}
+    if (td->mode->is_block_mode != NULL) {
+        return td->mode->is_block_mode();
+    }
 
-	return _is_block_mode();
+    return MCRYPT_UNKNOWN_ERROR;
 }
 
 WIN32DLL_DEFINE
 int mcrypt_enc_mode_has_iv(MCRYPT td)
 {
-	int (*_has_iv) (void);
+    if (td->mode->has_iv != NULL) {
+        return td->mode->has_iv();
+    }
 
-	_has_iv = mcrypt_module_get_sym(td->mode_handle, "_has_iv");
-	if (_has_iv == NULL) {
-		return MCRYPT_UNKNOWN_ERROR;
-	}
-
-	return _has_iv();
+    return MCRYPT_UNKNOWN_ERROR;
 }
 
 WIN32DLL_DEFINE
 int mcrypt_enc_is_block_algorithm_mode(MCRYPT td)
 {
-	int (*_is_a_block_mode) (void);
+    if (td->mode->is_block_algo_mode != NULL) {
+        return td->mode->is_block_algo_mode();
+    }
 
-	_is_a_block_mode = mcrypt_module_get_sym(td->mode_handle, "_is_block_algorithm_mode");
-	if (_is_a_block_mode == NULL) {
-		return MCRYPT_UNKNOWN_ERROR;
-	}
-
-	return _is_a_block_mode();
+    return MCRYPT_UNKNOWN_ERROR;
 }
 
 WIN32DLL_DEFINE
 int mcrypt_enc_self_test(MCRYPT td)
 {
-	int (*_self_test) (void);
+    if (td->algo->self_test != NULL) {
+        return td->algo->self_test();
+    }
 
-	_self_test = mcrypt_module_get_sym(td->algorithm_handle, "_mcrypt_self_test");
-	if (_self_test == NULL) {
-		return MCRYPT_UNKNOWN_ERROR;
-	}
-
-	return _self_test();
+	return MCRYPT_UNKNOWN_ERROR;
 }
 
+/* ok */
 WIN32DLL_DEFINE
 int mcrypt_module_self_test(const char *algorithm)
 {
-	int i;
-	int (*_self_test) (void);
+    const mcrypt_algo_module* module = NULL;
 
-	if (!_mcrypt_search_symlist_lib(algorithm)) {
+    if (algorithm == NULL) {
+        return MCRYPT_UNKNOWN_ERROR;
+    }
+    
+    module = mcrypt_module_get_algo(algorithm);
+
+	if (module == NULL) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
-
-	_self_test = mcrypt_module_get_sym(algorithm, "_mcrypt_self_test");
-	if (_self_test == NULL) {
-		return MCRYPT_UNKNOWN_ERROR;
-	}
-	
-	i = _self_test();
-
-
-	return i;
+    
+    if (module->self_test != NULL) {
+        return module->self_test();
+    }
+    
+    return MCRYPT_UNKNOWN_ERROR;
 }
 
 WIN32DLL_DEFINE
 int mcrypt_module_algorithm_version(const char *algorithm)
 {
-	int i;
-	int (*_version) (void);	
+	const mcrypt_algo_module* module = NULL;
 
-	if (!_mcrypt_search_symlist_lib(algorithm)) {
+    if (algorithm == NULL) {
+        return MCRYPT_UNKNOWN_ERROR;
+    }
+    
+    module = mcrypt_module_get_algo(algorithm);
+
+	if (module == NULL) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
-
-	_version = mcrypt_module_get_sym(algorithm, "_mcrypt_algorithm_version");
-	if (_version==NULL) {
-
-		return MCRYPT_UNKNOWN_ERROR;
-	}
-
-	i = _version();
-
-
-	return i;
+    
+    if (module->get_version != NULL) {
+        return module->get_version();
+    }
+    
+    return MCRYPT_UNKNOWN_ERROR;
 }
 
 WIN32DLL_DEFINE
 int mcrypt_module_mode_version(const char *mode)
 {
-	int i;
-	int (*_version) (void);
+	const mcrypt_mode_module* module = NULL;
 
-	if (!_mcrypt_search_symlist_lib(mode)) {
-
+	if (mode == NULL) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
-	_version = mcrypt_module_get_sym(mode, "_mcrypt_mode_version");
-	if (_version==NULL) {
+    module = mcrypt_module_get_mode(mode);
 
+	if (module == NULL) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
-	i = _version();
+    if (module->get_version != NULL) {
+        return module->get_version();
+    }
 
-
-	return i;
+    return MCRYPT_UNKNOWN_ERROR;
 }
 
+/* ok */
 WIN32DLL_DEFINE
 int mcrypt_module_is_block_algorithm(const char *algorithm)
 {
-	int i;
-	int (*_is_block_algorithm) (void);
+	const mcrypt_algo_module* module = NULL;
 
-	if (!_mcrypt_search_symlist_lib(algorithm)) {
-
-		return MCRYPT_UNKNOWN_ERROR;
-	}
-
-	_is_block_algorithm = mcrypt_module_get_sym(algorithm, "_is_block_algorithm");
-	if (_is_block_algorithm==NULL) {
-        
-		return MCRYPT_UNKNOWN_ERROR;
-	}
-
-	i = _is_block_algorithm();
-
+    if (algorithm == NULL) {
+        return MCRYPT_UNKNOWN_ERROR;
+    }
     
+    module = mcrypt_module_get_algo(algorithm);
 
-	return i;
+	if (module == NULL) {
+		return MCRYPT_UNKNOWN_ERROR;
+	}
+    
+    if (module->is_block_algo != NULL) {
+        return module->is_block_algo();
+    }
+    
+    return MCRYPT_UNKNOWN_ERROR;
 }
 
 WIN32DLL_DEFINE
-int mcrypt_module_is_block_algorithm_mode(const char *mode, const char *m_directory)
+int mcrypt_module_is_block_algorithm_mode(const char *mode)
 {
-	int i;
-	int (*_is_a_block_mode) (void);
+	const mcrypt_mode_module* module = NULL;
 
-	if (!_mcrypt_search_symlist_lib(mode)) {
-
+	if (mode == NULL) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
-	_is_a_block_mode = mcrypt_module_get_sym(mode, "_is_block_algorithm_mode");
-	if (_is_a_block_mode==NULL) {
+    module = mcrypt_module_get_mode(mode);
+
+	if (module == NULL) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
-	i = _is_a_block_mode();
+    if (module->is_block_algo_mode != NULL) {
+        return module->is_block_algo_mode();
+    }
 
-
-	return i;
+    return MCRYPT_UNKNOWN_ERROR;
 }
 
 WIN32DLL_DEFINE
-int mcrypt_module_is_block_mode(const char *mode, const char *m_directory)
+int mcrypt_module_is_block_mode(const char *mode)
 {
-	int i;
-	int (*_is_block_mode) (void);
+    const mcrypt_mode_module* module = NULL;
 
-	if (!_mcrypt_search_symlist_lib(mode)) {
-
+	if (mode == NULL) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
-	_is_block_mode = mcrypt_module_get_sym(mode, "_is_block_mode");
-	if (_is_block_mode==NULL) {
+    module = mcrypt_module_get_mode(mode);
 
+	if (module == NULL) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
-	i = _is_block_mode();
+    if (module->is_block_mode != NULL) {
+        return module->is_block_mode();
+    }
 
-
-	return i;
+    return MCRYPT_UNKNOWN_ERROR;
 }
 
+/* ok */
 WIN32DLL_DEFINE
 int mcrypt_module_get_algo_block_size(const char *algorithm)
 {
-	int i;
-	int (*_get_block_size) (void);
+	const mcrypt_algo_module* module = NULL;
 
+    if (algorithm == NULL) {
+        return MCRYPT_UNKNOWN_ERROR;
+    }
+    
+    module = mcrypt_module_get_algo(algorithm);
 
-	if (!_mcrypt_search_symlist_lib(algorithm)) {
-        
+	if (module == NULL) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
-
-	_get_block_size = mcrypt_module_get_sym(algorithm, "_mcrypt_get_block_size");
-	if (_get_block_size==NULL) {
-        
-		return MCRYPT_UNKNOWN_ERROR;
-	}
-
-	i = _get_block_size();
-
-
-	return i;
+    
+    if (module->get_block_size != NULL) {
+        return module->get_block_size();
+    }
+    
+    return MCRYPT_UNKNOWN_ERROR;
 }
 
+/* ok */
 WIN32DLL_DEFINE
 int mcrypt_module_get_algo_key_size(const char *algorithm)
 {
-	int i;
-	int (*_get_key_size) (void);
+	const mcrypt_algo_module* module = NULL;
 
-	if (!_mcrypt_search_symlist_lib(algorithm)) {
-        
+    if (algorithm == NULL) {
+        return MCRYPT_UNKNOWN_ERROR;
+    }
+    
+    module = mcrypt_module_get_algo(algorithm);
+
+	if (module == NULL) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
-
-	_get_key_size = mcrypt_module_get_sym(algorithm, "_mcrypt_get_key_size");
-	if (_get_key_size==NULL) {
-        
-		return MCRYPT_UNKNOWN_ERROR;
-	}
-
-	i = _get_key_size();
-
-	return i;
+    
+    if (module->get_key_size != NULL) {
+        return module->get_key_size();
+    }
+    
+    return MCRYPT_UNKNOWN_ERROR;
 }
 
+/* ok */
 WIN32DLL_DEFINE
 int *mcrypt_module_get_algo_supported_key_sizes(const char *algorithm, int *len)
 {
-	int *(*_mcrypt_get_key_sizes) (int *);
-	int *size;
-	int * ret_size;
-    
-	if (!_mcrypt_search_symlist_lib(algorithm)) {
-		*len = 0;
-		return NULL;
-	}
+    const mcrypt_algo_module* module = NULL;
+    const int *size;
+	int *ret_size;
 
-	_mcrypt_get_key_sizes =
-	    mcrypt_module_get_sym(algorithm, "_mcrypt_get_supported_key_sizes");
-	if (_mcrypt_get_key_sizes==NULL) {
+    if (algorithm == NULL) {
+        *len = 0;
+        return NULL;
+    }
 
+    module = mcrypt_module_get_algo(algorithm);
+
+	if ((module == NULL) || (module->get_supported_key_sizes == NULL)) {
 		*len = 0;
-		return NULL;
+        return NULL;
 	}
 
 	ret_size = NULL;
-	size = _mcrypt_get_key_sizes(len);
-	if (*len!=0 && size!=NULL) {
-		ret_size = malloc( (*len)*sizeof(int));
-		if (ret_size!=NULL) {
-			memcpy( ret_size, size, (*len)*sizeof(int));
+	size = module->get_supported_key_sizes(len);
+    
+	if (*len != 0 && size != NULL) {
+		ret_size = malloc((*len) * sizeof(int));
+
+		if (ret_size != NULL) {
+			memcpy(ret_size, size, (*len)*sizeof(int));
 		}
-	} else *len = 0;
-	
+	} else {
+        *len = 0;
+    }
 
 	return ret_size;
 }

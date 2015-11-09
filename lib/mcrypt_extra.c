@@ -24,94 +24,53 @@
 #include <xmemory.h>
 #include <mcrypt_internal.h>
 
-WIN32DLL_DEFINE 
-int mcrypt_algorithm_module_ok(const char *file);
-WIN32DLL_DEFINE 
-int mcrypt_mode_module_ok(const char *file);
 
+extern const mcrypt_mode_module mcrypt_mode_modules[9];
+extern const mcrypt_algo_module mcrypt_algo_modules[20];
 
-#ifdef HAVE_READDIR_R
-# define MAXPATHLEN 256
-#endif
-
-
-extern const mcrypt_preloaded mps[];
-
+/* ok */
 WIN32DLL_DEFINE
-char **mcrypt_list_algorithms(const char *libdir,
-					      int *size)
+char **mcrypt_list_algorithms(int *size)
 {
-	char **filename = NULL;
-    int i = 0;
-	*size = 0;
-
-	while (mps[i].name != 0 || mps[i].address != 0) {
-		if (mps[i].name != NULL && mps[i].address == NULL) {
-			if (mcrypt_algorithm_module_ok(mps[i].name) >
-			    0) {
-				filename =
-				    realloc(filename,
-					    ((*size) +
-					     1) * sizeof(char *));
-				if (filename == NULL) {
-					goto freeall;
-				}
-				filename[*size] = strdup(mps[i].name);
-				if (filename[*size] == NULL)
-					goto freeall;
-				(*size)++;
-			}
-		}
-		i++;
-	}
-
-
-	return filename;
-
-      freeall:
-	for (i = 0; i < (*size); i++) {
-		free(filename[i]);
-	}
-	free(filename);
-	return NULL;
-}
-
-WIN32DLL_DEFINE
-char **mcrypt_list_modes(const char *libdir, int *size)
-{
-	char **filename = NULL;
+	char **algos = NULL;
 	int i = 0;
 
-	*size = 0;
+	*size = sizeof(mcrypt_algo_modules) / sizeof(mcrypt_algo_module) - 1;
+    algos = malloc(sizeof(char*) * (*size));
 
-	while (mps[i].name != 0 || mps[i].address != 0) {
-		if (mps[i].name != NULL && mps[i].address == NULL) {
-			if (mcrypt_mode_module_ok(mps[i].name) > 0) {
-				filename =
-				    realloc(filename,
-					    (*size + 1) * sizeof(char *));
-				if (filename == NULL) {
-					goto freeall;
-				}
-				filename[*size] = strdup(mps[i].name);
-				if (filename[*size] == NULL)
-					goto freeall;
-				(*size)++;
-			}
-		}
-		i++;
-	}
+    if (algos == NULL) {
+        return NULL;
+    }
 
-	return filename;
+    for (i = 0; i < *size; i++) {
+        algos[i] = strdup(mcrypt_algo_modules[i].name);
+    }
 
-      freeall:
-	for (i = 0; i < (*size); i++) {
-		free(filename[i]);
-	}
-	free(filename);
-	return NULL;
+    return algos;
 }
 
+/* ok */
+WIN32DLL_DEFINE
+char **mcrypt_list_modes(int *size)
+{
+	char **modes = NULL;
+	int i = 0;
+
+	*size = sizeof(mcrypt_mode_modules) / sizeof(mcrypt_mode_module) - 1;
+    modes = malloc(sizeof(char*) * (*size));
+
+    if (modes == NULL) {
+        return NULL;
+    }
+
+    for (i = 0; i < *size; i++) {
+        modes[i] = strdup(mcrypt_mode_modules[i].name);
+    }
+
+    return modes;
+}
+
+/* ok */
 WIN32DLL_DEFINE
 void mcrypt_free_p(char **p, int size)
 {
@@ -123,61 +82,50 @@ void mcrypt_free_p(char **p, int size)
 	free(p);
 }
 
+/* ok */
 WIN32DLL_DEFINE
-int mcrypt_algorithm_module_ok(const char *module_name)
+int mcrypt_algorithm_module_ok(const char *name)
 {
-	word32 ret = 1;
-	int (*_version) (void);
+	const mcrypt_algo_module* module = NULL;
 
-	if (module_name == NULL) {
+	if (name == NULL) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
-	if (!_mcrypt_search_symlist_lib(module_name)) {
+    module = mcrypt_module_get_algo(name);
+
+	if (module == NULL) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
+    if (module->get_version != NULL) {
+        return module->get_version();
+    }
 
-	_version = mcrypt_module_get_sym(module_name, "_mcrypt_algorithm_version");
-
-	if (_version == NULL) {
-		return MCRYPT_UNKNOWN_ERROR;
-	}
-
-	ret = _version();
-
-	return ret;
-
+    return MCRYPT_UNKNOWN_ERROR;
 }
 
+/* ok */
 WIN32DLL_DEFINE
-int mcrypt_mode_module_ok(const char *module_name)
+int mcrypt_mode_module_ok(const char *name)
 {
-	word32 ret;
+	const mcrypt_mode_module* module = NULL;
 
-	int (*_version) (void);
-
-	if (module_name == NULL) {
+	if (name == NULL) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
-	if (!_mcrypt_search_symlist_lib(module_name)) {
+    module = mcrypt_module_get_mode(name);
 
+	if (module == NULL) {
 		return MCRYPT_UNKNOWN_ERROR;
 	}
 
+    if (module->get_version != NULL) {
+        return module->get_version();
+    }
 
-	_version = mcrypt_module_get_sym(module_name, "_mcrypt_mode_version");
-
-	if (_version == NULL) {
-
-		return MCRYPT_UNKNOWN_ERROR;
-	}
-
-	ret = _version();
-
-	return ret;
-
+    return MCRYPT_UNKNOWN_ERROR;
 }
 
 /* Taken from libgcrypt */
@@ -250,3 +198,4 @@ const char *mcrypt_check_version(const char *req_version)
 	}
 	return NULL;
 }
+

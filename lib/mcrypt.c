@@ -46,9 +46,6 @@
 #include <xmemory.h>
 #include <mcrypt_internal.h>
 
-#if 0
-static int preloaded_symbols = 0;
-#endif
 
 static int internal_end_mcrypt(MCRYPT td);
 
@@ -160,18 +157,13 @@ int mcrypt_generic_init(const MCRYPT td, const void *key, int lenofkey, const vo
 WIN32DLL_DEFINE
 int mcrypt_generic(MCRYPT td, void *plaintext, int len)
 {
-	int x;
-
-	x = mcrypt(td, td->abuf, plaintext, len);
-	return x;
+	return mcrypt(td, td->abuf, plaintext, len);
 }
 
 WIN32DLL_DEFINE
 int mdecrypt_generic(MCRYPT td, void *ciphertext, int len)
 {
-	int x;
-	x = mdecrypt(td, td->abuf, ciphertext, len);
-	return x;
+	return mdecrypt(td, td->abuf, ciphertext, len);	
 }
 
 WIN32DLL_DEFINE
