@@ -35,12 +35,12 @@ extern const mcrypt_algo_module mcrypt_algo_modules[20];
 const mcrypt_algo_module* mcrypt_module_get_algo(const char* name)
 {
     int size = sizeof(mcrypt_algo_modules) / sizeof(mcrypt_algo_module) - 1;
-    int i = 0;
-    
-    for (i = 0; i < size; i++) {
-        if (mcrypt_algo_modules[i].name != NULL 
-            && strcmp(mcrypt_algo_modules[i].name, name)) {
-            return &mcrypt_algo_modules[i];
+    const mcrypt_algo_module* module = NULL;
+
+    for (module = mcrypt_algo_modules; module < mcrypt_algo_modules + size; module++) {
+        if (module->name != NULL 
+            && (strcmp(module->name, name) == 0)) {
+            return module;
         }
     }
 
@@ -50,12 +50,12 @@ const mcrypt_algo_module* mcrypt_module_get_algo(const char* name)
 const mcrypt_mode_module* mcrypt_module_get_mode(const char* name)
 {
     int size = sizeof(mcrypt_mode_modules) / sizeof(mcrypt_mode_module) - 1;
-    int i = 0;
-    
-    for (i = 0; i < size; i++) {
-        if (mcrypt_mode_modules[i].name != NULL 
-            && strcmp(mcrypt_mode_modules[i].name, name)) {
-            return &mcrypt_mode_modules[i];
+    const mcrypt_mode_module* module = NULL;
+
+    for (module = mcrypt_mode_modules; module < mcrypt_mode_modules + size; module++) {
+        if (module->name != NULL 
+            && (strcmp(module->name, name) == 0)) {
+            return module;
         }
     }
 
@@ -347,7 +347,6 @@ int mcrypt_enc_self_test(MCRYPT td)
 	return MCRYPT_UNKNOWN_ERROR;
 }
 
-/* ok */
 WIN32DLL_DEFINE
 int mcrypt_module_self_test(const char *algorithm)
 {
@@ -414,7 +413,6 @@ int mcrypt_module_mode_version(const char *mode)
     return MCRYPT_UNKNOWN_ERROR;
 }
 
-/* ok */
 WIN32DLL_DEFINE
 int mcrypt_module_is_block_algorithm(const char *algorithm)
 {
@@ -481,7 +479,6 @@ int mcrypt_module_is_block_mode(const char *mode)
     return MCRYPT_UNKNOWN_ERROR;
 }
 
-/* ok */
 WIN32DLL_DEFINE
 int mcrypt_module_get_algo_block_size(const char *algorithm)
 {
@@ -504,7 +501,6 @@ int mcrypt_module_get_algo_block_size(const char *algorithm)
     return MCRYPT_UNKNOWN_ERROR;
 }
 
-/* ok */
 WIN32DLL_DEFINE
 int mcrypt_module_get_algo_key_size(const char *algorithm)
 {
@@ -527,7 +523,6 @@ int mcrypt_module_get_algo_key_size(const char *algorithm)
     return MCRYPT_UNKNOWN_ERROR;
 }
 
-/* ok */
 WIN32DLL_DEFINE
 int *mcrypt_module_get_algo_supported_key_sizes(const char *algorithm, int *len)
 {
