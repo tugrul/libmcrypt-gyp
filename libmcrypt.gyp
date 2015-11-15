@@ -4,8 +4,8 @@
             'target_name': 'libmcrypt',
             'type': 'static_library',
             'defines': [
-                'HAVE_CONFIG_H',
-                'LIBDIR="modules/algorithms/:modules/modes/"'
+                'STDC_HEADERS',
+                'VERSION="2.5.8"'
             ],
             'include_dirs': [
                 '.',
@@ -13,19 +13,52 @@
                 'include/'
             ],
             'conditions': [
+                ['OS=="linux"', {
+                        'defines': [
+                            'HAVE_BYTESWAP_H',
+                            'HAVE_BZERO',
+                            'HAVE_MEMMOVE',
+                            'HAVE_MEMSET',
+                            'HAVE_MLOCK',
+                            'HAVE_STRINGS_H',
+                            'HAVE_SYS_MMAN_H',
+                            'HAVE_SYS_TYPES_H',
+                            'HAVE_UNISTD_H',
+                            'SIZEOF_UNSIGNED_CHAR=1',
+                            'SIZEOF_UNSIGNED_INT=4',
+                            'SIZEOF_UNSIGNED_LONG_INT=8',
+                            'SIZEOF_UNSIGNED_SHORT_INT=2'
+                        ]
+                    }
+                ],
+                ['OS=="mac"', {
+                        'defines': [
+                            'HAVE_BZERO',
+                            'HAVE_MEMMOVE',
+                            'HAVE_MEMSET',
+                            'HAVE_MLOCK',
+                            'HAVE_STRINGS_H',
+                            'HAVE_SYS_MMAN_H',
+                            'HAVE_SYS_TYPES_H',
+                            'HAVE_UNISTD_H',
+                            'SIZEOF_UNSIGNED_CHAR=1',
+                            'SIZEOF_UNSIGNED_INT=4',
+                            'SIZEOF_UNSIGNED_LONG_INT=8',
+                            'SIZEOF_UNSIGNED_SHORT_INT=2'
+                        ]
+                    }
+                ],
                 ['OS=="win"', {
                         'defines': [
-                            'WIN32'
-                        ]
-                    }, { # OS != "win",
-                        'defines': [
-                            'HAVE_STRINGS_H',
-                            'HAVE_UNISTD_H',
-                            'HAVE_ENDIAN_H',
-                            'HAVE_BYTESWAP_H',
-                            'HAVE_DIRENT_H',
-                            'HAVE_SYS_MMAN_H',
-                            'HAVE_MLOCK'
+                            'WIN32',
+                            'HAVE_BZERO',
+                            'HAVE_MEMMOVE',
+                            'HAVE_MEMSET',
+                            'HAVE_SYS_TYPES_H',
+                            'SIZEOF_UNSIGNED_CHAR=1',
+                            'SIZEOF_UNSIGNED_INT=4',
+                            'SIZEOF_UNSIGNED_LONG_INT=8',
+                            'SIZEOF_UNSIGNED_SHORT_INT=2'
                         ]
                     }
                 ]
