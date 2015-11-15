@@ -7,7 +7,6 @@
 # include <config.h>
 #endif
 
-
 #ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
 #endif
@@ -37,27 +36,8 @@
 # include <sys/endian.h>
 #endif
 
-#ifdef HAVE_MACHINE_ENDIAN_H
-# include <machine/endian.h>
-#endif
-
-#ifdef HAVE_ENDIAN_H
-# include <endian.h>
-#endif
-
 #ifdef HAVE_BYTESWAP_H
 # include <byteswap.h>
-#endif
-
-
-#ifdef HAVE_READDIR_R
-#ifndef _POSIX_C_SOURCE
-# define _POSIX_C_SOURCE 199506L
-#endif
-#endif
-
-#ifdef HAVE_DIRENT_H
-# include <dirent.h>
 #endif
 
 #if SIZEOF_UNSIGNED_LONG_INT == 4
