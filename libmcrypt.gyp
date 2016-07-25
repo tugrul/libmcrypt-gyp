@@ -48,6 +48,23 @@
                         ]
                     }
                 ],
+                ['OS=="freebsd"', {
+                        'defines': [
+                            'HAVE_BZERO',
+                            'HAVE_MEMMOVE',
+                            'HAVE_MEMSET',
+                            'HAVE_MLOCK',
+                            'HAVE_STRINGS_H',
+                            'HAVE_SYS_MMAN_H',
+                            'HAVE_SYS_TYPES_H',
+                            'HAVE_UNISTD_H',
+                            'SIZEOF_UNSIGNED_CHAR=1',
+                            'SIZEOF_UNSIGNED_INT=4',
+                            'SIZEOF_UNSIGNED_LONG_INT=8',
+                            'SIZEOF_UNSIGNED_SHORT_INT=2'
+                        ]
+                    }
+                ],
                 ['OS=="win"', {
                         'defines': [
                             'WIN32',
