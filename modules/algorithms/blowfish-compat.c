@@ -149,10 +149,7 @@ WIN32DLL_DEFINE void _mcrypt_decrypt(blf_ctx * c, word32 * x)
 }
 
 
-static short initialize_blowfish(blf_ctx * c, char key[], short keybytes)
-{
-	short i, j;
-	word32 data, datarl[2];
+
 
 	word32 ks0[] = {
 		0xd1310ba6L, 0x98dfb5acL, 0x2ffd72dbL, 0xd01adfb7L,
@@ -516,6 +513,11 @@ static short initialize_blowfish(blf_ctx * c, char key[], short keybytes)
 		0x9216d5d9L, 0x8979fb1bL
 	};
 
+static short initialize_blowfish(blf_ctx * c, unsigned char key[],
+				 short keybytes)
+{
+	short i, j;
+	word32 data, datarl[2];
 
 /* Initialize s-boxes without file read. */
 	for (i = 0; i < 256; i++) {
@@ -566,7 +568,7 @@ static short initialize_blowfish(blf_ctx * c, char key[], short keybytes)
 
 WIN32DLL_DEFINE int _mcrypt_set_key(blf_ctx * c, char *k, int len)
 {
-	initialize_blowfish(c, k, len);
+	initialize_blowfish(c, (unsigned char *)k, len);
 	return 0;
 }
 
@@ -601,8 +603,8 @@ return "Blowfish";
 WIN32DLL_DEFINE int _mcrypt_self_test()
 {
 	char *keyword;
-	char plaintext[16];
-	char ciphertext[16];
+	unsigned char plaintext[16];
+	unsigned char ciphertext[16];
 	int blocksize = _mcrypt_get_block_size(), j;
 	void *key;
 	unsigned char cipher_tmp[200];
@@ -626,6 +628,7 @@ WIN32DLL_DEFINE int _mcrypt_self_test()
 
 	_mcrypt_set_key(key, (void *) keyword, _mcrypt_get_key_size());
 	free(keyword);
+
 	_mcrypt_encrypt(key, (void *) ciphertext);
 
 	for (j = 0; j < blocksize; j++) {
@@ -643,7 +646,7 @@ WIN32DLL_DEFINE int _mcrypt_self_test()
 	_mcrypt_decrypt(key, (void *) ciphertext);
 	free(key);
 
-	if (strcmp(ciphertext, plaintext) != 0) {
+	if (strcmp((const char *)ciphertext, (const char *)plaintext) != 0) {
 		printf("failed internally\n");
 		return -1;
 	}
@@ -655,5 +658,3 @@ WIN32DLL_DEFINE word32 _mcrypt_algorithm_version()
 {
 	return 20010801;
 }
-
-
