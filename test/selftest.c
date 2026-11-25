@@ -6,6 +6,9 @@
  *   3. an encrypt/decrypt round trip through every algorithm/mode pair
  *
  * Exits 0 when everything passes. Run it through CTest or directly.
+ *
+ * With LIBMCRYPT_SELFTEST_NO_MAIN defined, only libmcrypt_selftest() is
+ * compiled, for callers that have their own entry point (test/addon/addon.c).
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -116,7 +119,8 @@ static void test_round_trip(const char *algo, const char *mode, int *pairs)
 	mcrypt_module_close(td);
 }
 
-int main(void)
+/* Returns the number of failures. */
+int libmcrypt_selftest(void)
 {
 	int n_algos = 0, n_modes = 0, pairs = 0, i, j;
 	char **algos = mcrypt_list_algorithms(&n_algos);
@@ -124,6 +128,7 @@ int main(void)
 
 	if (algos == NULL || modes == NULL || n_algos == 0 || n_modes == 0) {
 		printf("FAILED  no algorithms or modes registered\n");
+		fflush(stdout);
 		return 1;
 	}
 
@@ -143,8 +148,17 @@ int main(void)
 	       mcrypt_check_version(NULL), n_algos, n_modes, pairs,
 	       failures, failures == 1 ? "" : "s");
 
+	fflush(stdout);
+
 	mcrypt_free_p(algos, n_algos);
 	mcrypt_free_p(modes, n_modes);
 
-	return failures ? 1 : 0;
+	return failures;
 }
+
+#ifndef LIBMCRYPT_SELFTEST_NO_MAIN
+int main(void)
+{
+	return libmcrypt_selftest() ? 1 : 0;
+}
+#endif

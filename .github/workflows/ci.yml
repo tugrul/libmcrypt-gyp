@@ -1,0 +1,131 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The CMake build and its self-test on the platforms GitHub hosts natively.
+  cmake:
+    name: CMake / ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: Linux x86-64 gcc,   os: ubuntu-latest,    cc: gcc }
+          - { name: Linux x86-64 clang, os: ubuntu-latest,    cc: clang }
+          - { name: Linux arm64 gcc,    os: ubuntu-24.04-arm, cc: gcc }
+          - { name: macOS arm64,        os: macos-latest }
+          - { name: macOS x86-64,       os: macos-15-intel }
+          - { name: Windows x64 MSVC,   os: windows-latest }
+    steps:
+      - uses: actions/checkout@v6
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release ${{ matrix.cc && format('-DCMAKE_C_COMPILER={0}', matrix.cc) || '' }}
+      - name: Build
+        run: cmake --build build --config Release --parallel
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
+
+  # The gyp build, consumed the way node-mcrypt consumes it: as a dependency
+  # of a Node addon, with the library in lib/libmcrypt. Loading the addon
+  # runs the self-test.
+  gyp:
+    name: node-gyp / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+      - name: Put the library where the test addon expects it
+        run: |
+          mkdir -p test/addon/lib/libmcrypt
+          cp -r include lib modules libmcrypt.gyp test/addon/lib/libmcrypt/
+      - name: Build the test addon
+        run: npx --yes node-gyp@latest rebuild --directory test/addon
+      - name: Load it in Node
+        run: |
+          node -e "process.exit(require('./test/addon/build/Release/selftest.node').failures ? 1 : 0)"
+
+  # The newest released compilers. The upstream sources contain undefined
+  # behaviour that older compilers tolerated, and GCC 15 changed the default
+  # C dialect; this job is the early warning for the next such change.
+  newest-compilers:
+    name: Fedora latest / ${{ matrix.cc }}
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        cc: [gcc, clang]
+    steps:
+      - name: Install the toolchain
+        run: dnf -y install git cmake make gcc clang
+      - uses: actions/checkout@v6
+      - name: Compiler version
+        run: ${{ matrix.cc }} --version
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=${{ matrix.cc }}
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  # Other CPUs, in a Debian container under QEMU user-mode emulation:
+  # s390x is big-endian, ppc64le and arm/v7 have unsigned char, arm/v7 and
+  # 386 are 32-bit.
+  emulated:
+    name: Emulated / ${{ matrix.platform }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux/s390x, linux/ppc64le, linux/arm/v7, linux/386]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: docker/setup-qemu-action@v4
+      - name: Build and test in the container
+        run: |
+          docker run --rm --platform ${{ matrix.platform }} -v "$PWD":/src:ro debian:trixie-slim sh -euxc '
+            apt-get update -qq
+            apt-get install -y -qq --no-install-recommends gcc libc6-dev make cmake
+            gcc -dumpmachine
+            cmake -S /src -B /tmp/build -DCMAKE_BUILD_TYPE=Release
+            cmake --build /tmp/build --parallel
+            ctest --test-dir /tmp/build --output-on-failure
+          '
+
+  # Memory errors and undefined behaviour stop the test. shift-base is left
+  # out because of five known signed left shifts in upstream's DES, Triple
+  # DES, GOST and LOKI97 code.
+  sanitizers:
+    name: Sanitizers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Configure
+        run: >
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+          "-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-sanitize=shift-base
+          -fno-sanitize-recover=all -fno-omit-frame-pointer"
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
