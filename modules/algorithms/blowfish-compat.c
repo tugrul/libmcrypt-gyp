@@ -151,7 +151,7 @@ WIN32DLL_DEFINE void _mcrypt_decrypt(blf_ctx * c, word32 * x)
 
 
 
-	word32 ks0[] = {
+static const word32 ks0[] = {
 		0xd1310ba6L, 0x98dfb5acL, 0x2ffd72dbL, 0xd01adfb7L,
 		0xb8e1afedL, 0x6a267e96L,
 		0xba7c9045L, 0xf12c7f99L, 0x24a19947L, 0xb3916cf7L,
@@ -239,7 +239,7 @@ WIN32DLL_DEFINE void _mcrypt_decrypt(blf_ctx * c, word32 * x)
 		0x53b02d5dL, 0xa99f8fa1L, 0x08ba4799L, 0x6e85076aL
 	};
 
-	word32 ks1[] = {
+static const word32 ks1[] = {
 		0x4b7a70e9L, 0xb5b32944L, 0xdb75092eL, 0xc4192623L,
 		0xad6ea6b0L, 0x49a7df7dL,
 		0x9cee60b8L, 0x8fedb266L, 0xecaa8c71L, 0x699a17ffL,
@@ -327,7 +327,7 @@ WIN32DLL_DEFINE void _mcrypt_decrypt(blf_ctx * c, word32 * x)
 		0x153e21e7L, 0x8fb03d4aL, 0xe6e39f2bL, 0xdb83adf7L
 	};
 
-	word32 ks2[] = {
+static const word32 ks2[] = {
 		0xe93d5a68L, 0x948140f7L, 0xf64c261cL, 0x94692934L,
 		0x411520f7L, 0x7602d4f7L,
 		0xbcf46b2eL, 0xd4a20068L, 0xd4082471L, 0x3320f46aL,
@@ -415,7 +415,7 @@ WIN32DLL_DEFINE void _mcrypt_decrypt(blf_ctx * c, word32 * x)
 		0xd79a3234L, 0x92638212L, 0x670efa8eL, 0x406000e0L
 	};
 
-	word32 ks3[] = {
+static const word32 ks3[] = {
 		0x3a39ce37L, 0xd3faf5cfL, 0xabc27737L, 0x5ac52d1bL,
 		0x5cb0679eL, 0x4fa33742L,
 		0xd3822740L, 0x99bc9bbeL, 0xd5118e9dL, 0xbf0f7315L,
@@ -504,7 +504,7 @@ WIN32DLL_DEFINE void _mcrypt_decrypt(blf_ctx * c, word32 * x)
 	};
 
 
-	word32 pi[] = {
+static const word32 pi[] = {
 		0x243f6a88L, 0x85a308d3L, 0x13198a2eL, 0x03707344L,
 		0xa4093822L, 0x299f31d0L,
 		0x082efa98L, 0xec4e6c89L, 0x452821e6L, 0x38d01377L,
