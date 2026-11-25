@@ -37,6 +37,10 @@ const mcrypt_algo_module* mcrypt_module_get_algo(const char* name)
     int size = sizeof(mcrypt_algo_modules) / sizeof(mcrypt_algo_module) - 1;
     const mcrypt_algo_module* module = NULL;
 
+    if (name == NULL) {
+        return NULL;
+    }
+
     for (module = mcrypt_algo_modules; module < mcrypt_algo_modules + size; module++) {
         if (module->name != NULL 
             && (strcmp(module->name, name) == 0)) {
@@ -51,6 +55,10 @@ const mcrypt_mode_module* mcrypt_module_get_mode(const char* name)
 {
     int size = sizeof(mcrypt_mode_modules) / sizeof(mcrypt_mode_module) - 1;
     const mcrypt_mode_module* module = NULL;
+
+    if (name == NULL) {
+        return NULL;
+    }
 
     for (module = mcrypt_mode_modules; module < mcrypt_mode_modules + size; module++) {
         if (module->name != NULL 
