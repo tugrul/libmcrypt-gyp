@@ -625,8 +625,8 @@ return "PANAMA";
 WIN32DLL_DEFINE int _mcrypt_self_test()
 {
 	char *keyword;
-	char plaintext[20];
-	char ciphertext[20];
+	unsigned char plaintext[20];
+	unsigned char ciphertext[20];
 	int blocksize = 20, j;
 	void *key;
 	unsigned char cipher_tmp[200];
@@ -675,7 +675,7 @@ WIN32DLL_DEFINE int _mcrypt_self_test()
 	_mcrypt_decrypt(key, (void *) ciphertext, blocksize);
 	free(key);
 
-	if (strcmp(ciphertext, plaintext) != 0) {
+	if (strcmp((const char *) ciphertext, (const char *) plaintext) != 0) {
 		printf("failed internally\n");
 		return -1;
 	}

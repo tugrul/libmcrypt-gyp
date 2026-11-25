@@ -436,8 +436,8 @@ return "Rijndael-128";
 WIN32DLL_DEFINE int _mcrypt_self_test()
 {
 	char *keyword;
-	char plaintext[32];
-	char ciphertext[32];
+	unsigned char plaintext[32];
+	unsigned char ciphertext[32];
 	int blocksize = _mcrypt_get_block_size(), j;
 	int keysize = 16;
 	void *key;
@@ -484,7 +484,7 @@ WIN32DLL_DEFINE int _mcrypt_self_test()
 	_mcrypt_decrypt(key, (void *) ciphertext);
 	free(key);
 
-	if (strcmp(ciphertext, plaintext) != 0) {
+	if (strcmp((const char *) ciphertext, (const char *) plaintext) != 0) {
 		printf("failed internally\n");
 		return -1;
 	}

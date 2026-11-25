@@ -310,8 +310,8 @@ return "WAKE";
 WIN32DLL_DEFINE int _mcrypt_self_test()
 {
 	unsigned char *keyword;
-	char plaintext[43];
-	char ciphertext[43];
+	unsigned char plaintext[43];
+	unsigned char ciphertext[43];
 	int blocksize = 43, j;
 	void *key, *key2;
 	unsigned char cipher_tmp[200];
@@ -343,7 +343,7 @@ WIN32DLL_DEFINE int _mcrypt_self_test()
 		printf("failed compatibility\n");
 		printf("Expected: %s\nGot: %s\n", CIPHER,
 		       (char *) cipher_tmp);
-		free(key);
+		free(keyword);
 		free(key2);
 		return -1;
 	}

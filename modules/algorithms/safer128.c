@@ -330,8 +330,8 @@ WIN32DLL_DEFINE char *_mcrypt_get_algorithms_name()
 WIN32DLL_DEFINE int _mcrypt_self_test()
 {
 	char *keyword;
-	char plaintext[16];
-	char ciphertext[16];
+	unsigned char plaintext[16];
+	unsigned char ciphertext[16];
 	int blocksize = _mcrypt_get_block_size(), j;
 	void *key;
 	unsigned char cipher_tmp[200];
@@ -374,7 +374,7 @@ WIN32DLL_DEFINE int _mcrypt_self_test()
 	_mcrypt_decrypt(key, (void *) ciphertext);
 	free(key);
 
-	if (strcmp(ciphertext, plaintext) != 0) {
+	if (strcmp((const char *) ciphertext, (const char *) plaintext) != 0) {
 		printf("failed internally\n");
 		return -1;
 	}
