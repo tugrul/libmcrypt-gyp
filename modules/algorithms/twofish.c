@@ -49,18 +49,6 @@
 #include <mcrypt_modules.h>
 #include "twofish.h"
 
-#define _mcrypt_set_key twofish_LTX__mcrypt_set_key
-#define _mcrypt_encrypt twofish_LTX__mcrypt_encrypt
-#define _mcrypt_decrypt twofish_LTX__mcrypt_decrypt
-#define _mcrypt_get_size twofish_LTX__mcrypt_get_size
-#define _mcrypt_get_block_size twofish_LTX__mcrypt_get_block_size
-#define _is_block_algorithm twofish_LTX__is_block_algorithm
-#define _mcrypt_get_key_size twofish_LTX__mcrypt_get_key_size
-#define _mcrypt_get_supported_key_sizes twofish_LTX__mcrypt_get_supported_key_sizes
-#define _mcrypt_get_algorithms_name twofish_LTX__mcrypt_get_algorithms_name
-#define _mcrypt_self_test twofish_LTX__mcrypt_self_test
-#define _mcrypt_algorithm_version twofish_LTX__mcrypt_algorithm_version
-
 /* word32  k_len;
  * word32  l_key[40];
  * word32  s_key[4];
@@ -423,10 +411,11 @@ word32 mds_rem(word32 p0, word32 p1)
 }
 
 /* initialise the key schedule from the user supplied key   */
-WIN32DLL_DEFINE
-    int _mcrypt_set_key(TWI * pkey, const word32 in_key[],
-			const word32 key_len)
+static int _mcrypt_set_key(void *ctx, const void *key, int len)
 {
+	TWI *pkey = ctx;
+	const word32 *in_key = key;
+	const word32 key_len = (word32) len;
 	word32 i, a, b, me_key[4], mo_key[4];
 
 #ifdef Q_TABLES
@@ -497,8 +486,10 @@ static void f_rnd(int i, word32* blk, TWI* pkey, word32 t0, word32 t1)
 }
 
 /* encrypt a block of text  */
-WIN32DLL_DEFINE void _mcrypt_encrypt(TWI * pkey, word32 * in_blk)
+static void _mcrypt_encrypt(void *ctx, void *block)
 {
+	TWI *pkey = ctx;
+	word32 *in_blk = block;
 	word32 t0 = 0, t1 = 0, blk[4];
 #ifdef WORDS_BIGENDIAN
 	blk[0] = byteswap32(in_blk[0]) ^ pkey->l_key[0];
@@ -544,8 +535,10 @@ WIN32DLL_DEFINE void _mcrypt_encrypt(TWI * pkey, word32 * in_blk)
         blk[0] = rotl32(blk[0], 1) ^ (t0 + t1 + pkey->l_key[4 * (i) +  8]);     \
         blk[1] = rotr32(blk[1] ^ (t0 + 2 * t1 + pkey->l_key[4 * (i) +  9]), 1)
 
-WIN32DLL_DEFINE void _mcrypt_decrypt(TWI * pkey, word32 * in_blk)
+static void _mcrypt_decrypt(void *ctx, void *block)
 {
+	TWI *pkey = ctx;
+	word32 *in_blk = block;
 	word32 t0, t1, blk[4];
 
 #ifdef WORDS_BIGENDIAN
@@ -583,31 +576,31 @@ WIN32DLL_DEFINE void _mcrypt_decrypt(TWI * pkey, word32 * in_blk)
 
 }
 
-WIN32DLL_DEFINE int _mcrypt_get_size()
+static int _mcrypt_get_size(void)
 {
 	return sizeof(TWI);
 }
-WIN32DLL_DEFINE int _mcrypt_get_block_size()
+static int _mcrypt_get_block_size(void)
 {
 	return 16;
 }
-WIN32DLL_DEFINE int _is_block_algorithm()
+static int _is_block_algorithm(void)
 {
 	return 1;
 }
-WIN32DLL_DEFINE int _mcrypt_get_key_size()
+static int _mcrypt_get_key_size(void)
 {
 	return 32;
 }
 
 static const int key_sizes[] = { 16, 24, 32 };
-WIN32DLL_DEFINE const int *_mcrypt_get_supported_key_sizes(int *len)
+static const int *_mcrypt_get_supported_key_sizes(int *len)
 {
 	*len = sizeof(key_sizes)/sizeof(int);
 	return key_sizes;
 }
 
-WIN32DLL_DEFINE const char *_mcrypt_get_algorithms_name()
+static const char *_mcrypt_get_algorithms_name(void)
 {
 return "Twofish";
 }
@@ -616,7 +609,7 @@ return "Twofish";
 #define PT "\xD4\x91\xDB\x16\xE7\xB1\xC3\x9E\x86\xCB\x08\x6B\x78\x9F\x54\x19"
 #define KEY "\x9F\x58\x9F\x5C\xF6\x12\x2C\x32\xB6\xBF\xEC\x2F\x2A\xE8\xC3\x5A"
 
-WIN32DLL_DEFINE int _mcrypt_self_test()
+static int _mcrypt_self_test(void)
 {
 	unsigned char keyword[16];
 	unsigned char plaintext[16];
@@ -660,7 +653,22 @@ WIN32DLL_DEFINE int _mcrypt_self_test()
 	return 0;
 }
 
-WIN32DLL_DEFINE word32 _mcrypt_algorithm_version()
+static word32 _mcrypt_algorithm_version(void)
 {
 	return 19991129;
 }
+
+const mcrypt_algo_module mcrypt_algo_twofish = {
+	.name = "twofish",
+	.set_key = _mcrypt_set_key,
+	.encrypt = _mcrypt_encrypt,
+	.decrypt = _mcrypt_decrypt,
+	.get_size = _mcrypt_get_size,
+	.get_block_size = _mcrypt_get_block_size,
+	.is_block_algo = _is_block_algorithm,
+	.get_key_size = _mcrypt_get_key_size,
+	.get_supported_key_sizes = _mcrypt_get_supported_key_sizes,
+	.get_name = _mcrypt_get_algorithms_name,
+	.self_test = _mcrypt_self_test,
+	.get_version = _mcrypt_algorithm_version
+};

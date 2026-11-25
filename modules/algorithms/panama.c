@@ -42,19 +42,6 @@
 #include "panama.h"
 
 
-#define _mcrypt_set_key panama_LTX__mcrypt_set_key
-#define _mcrypt_encrypt panama_LTX__mcrypt_encrypt
-#define _mcrypt_decrypt panama_LTX__mcrypt_decrypt
-#define _mcrypt_get_size panama_LTX__mcrypt_get_size
-#define _mcrypt_get_block_size panama_LTX__mcrypt_get_block_size
-#define _is_block_algorithm panama_LTX__is_block_algorithm
-#define _mcrypt_get_key_size panama_LTX__mcrypt_get_key_size
-#define _mcrypt_get_algo_iv_size panama_LTX__mcrypt_get_algo_iv_size
-#define _mcrypt_get_supported_key_sizes panama_LTX__mcrypt_get_supported_key_sizes
-#define _mcrypt_get_algorithms_name panama_LTX__mcrypt_get_algorithms_name
-#define _mcrypt_self_test panama_LTX__mcrypt_self_test
-#define _mcrypt_algorithm_version panama_LTX__mcrypt_algorithm_version
-
 /**************************************************************************+
 *                         Panama internal routines                         *
 +**************************************************************************/
@@ -514,10 +501,12 @@ static void pan_reset(PAN_BUFFER * buffer, PAN_STATE * state)
 *
 +**************************************************************************/
 
-WIN32DLL_DEFINE
-    int _mcrypt_set_key(PANAMA_KEY * pan_key, char *in_key, int keysize,
-			char *init_vec, int vecsize)
+static int _mcrypt_set_key(void *ctx, const void *key, int keysize,
+                           const void *iv, int vecsize)
 {
+	PANAMA_KEY *pan_key = ctx;
+	const char *in_key = key;
+	const char *init_vec = iv;
 	int keyblocks = (8 * keysize) / (PAN_STAGE_SIZE * WORDLENGTH);
 	int vecblocks = (8 * vecsize) / (PAN_STAGE_SIZE * WORDLENGTH);
 #ifdef WORDS_BIGENDIAN
@@ -551,10 +540,10 @@ WIN32DLL_DEFINE
 	return 0;
 }
 
-WIN32DLL_DEFINE void _mcrypt_encrypt(PANAMA_KEY * pan_key,	/* the key from pan_init */
-				     byte * buf,	/* input array                         */
-				     int length)
+static void _mcrypt_encrypt(void *ctx, void *data, int length)
 {				/* length to be encrypted, in bits     */
+	PANAMA_KEY *pan_key = ctx;	/* the key from pan_init */
+	byte *buf = data;		/* input array */
 	int i;
 #ifdef WORDS_BIGENDIAN
 	int j;
@@ -579,53 +568,53 @@ WIN32DLL_DEFINE void _mcrypt_encrypt(PANAMA_KEY * pan_key,	/* the key from pan_i
 	}
 }
 
-WIN32DLL_DEFINE void _mcrypt_decrypt(PANAMA_KEY * pan_key,	/* the key from pan_init */
-				     byte * buf,	/* input array                         */
-				     int length)
+static void _mcrypt_decrypt(void *ctx, void *data, int length)
 {				/* length to be encrypted, in bits     */
+	PANAMA_KEY *pan_key = ctx;	/* the key from pan_init */
+	byte *buf = data;		/* input array */
 	_mcrypt_encrypt(pan_key, buf, length);
 }
 
 /**************************************************************************/
 
 
-WIN32DLL_DEFINE int _mcrypt_get_size()
+static int _mcrypt_get_size(void)
 {
 	return sizeof(PANAMA_KEY);
 }
-WIN32DLL_DEFINE int _mcrypt_get_block_size()
+static int _mcrypt_get_block_size(void)
 {
 	return 1;
 }
-WIN32DLL_DEFINE int _mcrypt_get_algo_iv_size()
+static int _mcrypt_get_algo_iv_size(void)
 {
 	return 32;
 }
-WIN32DLL_DEFINE int _is_block_algorithm()
+static int _is_block_algorithm(void)
 {
 	return 0;
 }
-WIN32DLL_DEFINE int _mcrypt_get_key_size()
+static int _mcrypt_get_key_size(void)
 {
 	return 32;
 }
 
 static const int key_sizes[] = { 32 };
-WIN32DLL_DEFINE const int *_mcrypt_get_supported_key_sizes(int *len)
+static const int *_mcrypt_get_supported_key_sizes(int *len)
 {
 	*len = sizeof(key_sizes)/sizeof(int);
 	return key_sizes;
 
 }
 
-WIN32DLL_DEFINE char *_mcrypt_get_algorithms_name()
+static const char *_mcrypt_get_algorithms_name(void)
 {
 return "PANAMA";
 }
 
 #define CIPHER "d76e3c2243feadd2c99edfcb95c64c852ba6c59f"
 
-WIN32DLL_DEFINE int _mcrypt_self_test()
+static int _mcrypt_self_test(void)
 {
 	char *keyword;
 	unsigned char plaintext[20];
@@ -686,7 +675,23 @@ WIN32DLL_DEFINE int _mcrypt_self_test()
 	return 0;
 }
 
-WIN32DLL_DEFINE word32 _mcrypt_algorithm_version(void)
+static word32 _mcrypt_algorithm_version(void)
 {
 	return 20010801;
 }
+
+const mcrypt_algo_module mcrypt_algo_panama = {
+	.name = "panama",
+	.stream_set_key = _mcrypt_set_key,
+	.stream_encrypt = _mcrypt_encrypt,
+	.stream_decrypt = _mcrypt_decrypt,
+	.get_size = _mcrypt_get_size,
+	.get_block_size = _mcrypt_get_block_size,
+	.is_block_algo = _is_block_algorithm,
+	.get_key_size = _mcrypt_get_key_size,
+	.get_algo_iv_size = _mcrypt_get_algo_iv_size,
+	.get_supported_key_sizes = _mcrypt_get_supported_key_sizes,
+	.get_name = _mcrypt_get_algorithms_name,
+	.self_test = _mcrypt_self_test,
+	.get_version = _mcrypt_algorithm_version
+};

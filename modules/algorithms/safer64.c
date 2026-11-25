@@ -32,18 +32,6 @@
 #include "safer.h"
 
 
-#define _mcrypt_set_key safer_sk64_LTX__mcrypt_set_key
-#define _mcrypt_encrypt safer_sk64_LTX__mcrypt_encrypt
-#define _mcrypt_decrypt safer_sk64_LTX__mcrypt_decrypt
-#define _mcrypt_get_size safer_sk64_LTX__mcrypt_get_size
-#define _mcrypt_get_block_size safer_sk64_LTX__mcrypt_get_block_size
-#define _is_block_algorithm safer_sk64_LTX__is_block_algorithm
-#define _mcrypt_get_key_size safer_sk64_LTX__mcrypt_get_key_size
-#define _mcrypt_get_supported_key_sizes safer_sk64_LTX__mcrypt_get_supported_key_sizes
-#define _mcrypt_get_algorithms_name safer_sk64_LTX__mcrypt_get_algorithms_name
-#define _mcrypt_self_test safer_sk64_LTX__mcrypt_self_test
-#define _mcrypt_algorithm_version safer_sk64_LTX__mcrypt_algorithm_version
-
 /******************* Constants ************************************************/
 #define TAB_LEN      256
 static int _safer64_init = 0;
@@ -81,10 +69,10 @@ static void _mcrypt_Safer_Init_Module(void)
 
 /******************************************************************************/
 
-WIN32DLL_DEFINE
-    int _mcrypt_set_key(safer_key_t * key, safer_block_t * userkey,
-			int len)
+static int _mcrypt_set_key(void *ctx, const void *user_key, int len)
 {
+	safer_key_t *key = ctx;
+	const safer_block_t *userkey = user_key;
     int i;
 	unsigned int j;
 	unsigned char ka[SAFER_BLOCK_LEN + 1];
@@ -145,9 +133,10 @@ WIN32DLL_DEFINE
 /******************************************************************************/
 
 
-WIN32DLL_DEFINE
-    void _mcrypt_encrypt(const safer_key_t * key, safer_block_t * block_in)
+static void _mcrypt_encrypt(void *ctx, void *block)
 {
+	const safer_key_t *key = ctx;
+	safer_block_t *block_in = block;
 	unsigned char a, b, c, d, e, f, g, h, t;
 	unsigned int round;
 
@@ -219,9 +208,10 @@ WIN32DLL_DEFINE
 
 /******************************************************************************/
 
-WIN32DLL_DEFINE
-    void _mcrypt_decrypt(const safer_key_t * key, safer_block_t * block_in)
+static void _mcrypt_decrypt(void *ctx, void *block)
 {
+	const safer_key_t *key = ctx;
+	safer_block_t *block_in = block;
 	safer_block_t a, b, c, d, e, f, g, h, t;
 	unsigned int round;
 	a = block_in[0];
@@ -294,38 +284,38 @@ WIN32DLL_DEFINE
 /******************************************************************************/
 
 
-WIN32DLL_DEFINE int _mcrypt_get_size()
+static int _mcrypt_get_size(void)
 {
 	return (1 + SAFER_BLOCK_LEN * (1 + 2 * SAFER_MAX_NOF_ROUNDS));
 }
-WIN32DLL_DEFINE int _mcrypt_get_block_size()
+static int _mcrypt_get_block_size(void)
 {
 	return 8;
 }
-WIN32DLL_DEFINE int _is_block_algorithm()
+static int _is_block_algorithm(void)
 {
 	return 1;
 }
-WIN32DLL_DEFINE int _mcrypt_get_key_size()
+static int _mcrypt_get_key_size(void)
 {
 	return 8;
 }
 
 static const int key_sizes[] = { 8 };
-WIN32DLL_DEFINE const int *_mcrypt_get_supported_key_sizes(int *len)
+static const int *_mcrypt_get_supported_key_sizes(int *len)
 {
 	*len = sizeof(key_sizes)/sizeof(int);
 	return key_sizes;
 
 }
-WIN32DLL_DEFINE char *_mcrypt_get_algorithms_name()
+static const char *_mcrypt_get_algorithms_name(void)
 {
 return "SAFER-SK64";
 }
 
 #define CIPHER "e490eebffd908f34"
 
-WIN32DLL_DEFINE int _mcrypt_self_test()
+static int _mcrypt_self_test(void)
 {
 	char *keyword;
 	unsigned char plaintext[16];
@@ -380,8 +370,22 @@ WIN32DLL_DEFINE int _mcrypt_self_test()
 	return 0;
 }
 
-WIN32DLL_DEFINE word32 _mcrypt_algorithm_version()
+static word32 _mcrypt_algorithm_version(void)
 {
 	return 20010801;
 }
 
+const mcrypt_algo_module mcrypt_algo_safer_sk64 = {
+	.name = "safer-sk64",
+	.set_key = _mcrypt_set_key,
+	.encrypt = _mcrypt_encrypt,
+	.decrypt = _mcrypt_decrypt,
+	.get_size = _mcrypt_get_size,
+	.get_block_size = _mcrypt_get_block_size,
+	.is_block_algo = _is_block_algorithm,
+	.get_key_size = _mcrypt_get_key_size,
+	.get_supported_key_sizes = _mcrypt_get_supported_key_sizes,
+	.get_name = _mcrypt_get_algorithms_name,
+	.self_test = _mcrypt_self_test,
+	.get_version = _mcrypt_algorithm_version
+};

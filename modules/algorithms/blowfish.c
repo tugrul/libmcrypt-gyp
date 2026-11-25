@@ -14,18 +14,6 @@
 #include <mcrypt_modules.h>
 #include "blowfish.h"
 
-#define _mcrypt_set_key blowfish_LTX__mcrypt_set_key
-#define _mcrypt_encrypt blowfish_LTX__mcrypt_encrypt
-#define _mcrypt_decrypt blowfish_LTX__mcrypt_decrypt
-#define _mcrypt_get_size blowfish_LTX__mcrypt_get_size
-#define _mcrypt_get_block_size blowfish_LTX__mcrypt_get_block_size
-#define _is_block_algorithm blowfish_LTX__is_block_algorithm
-#define _mcrypt_get_key_size blowfish_LTX__mcrypt_get_key_size
-#define _mcrypt_get_supported_key_sizes blowfish_LTX__mcrypt_get_supported_key_sizes
-#define _mcrypt_get_algorithms_name blowfish_LTX__mcrypt_get_algorithms_name
-#define _mcrypt_self_test blowfish_LTX__mcrypt_self_test
-#define _mcrypt_algorithm_version blowfish_LTX__mcrypt_algorithm_version
-
 #define MAXKEYBYTES 56		/* 448 bits */
 #define BF_N         16
 #define KEYBYTES   8
@@ -33,8 +21,10 @@
 #define F(bc, x) ( ((bc->S[0][(x >> 24) & 0xff] + bc->S[1][(x >> 16) & 0xff]) ^ bc->S[2][(x >>  8) & 0xff]) + bc->S[3][x & 0xff] )
 
 /* x should be a 64 bit integer */
-WIN32DLL_DEFINE void _mcrypt_encrypt(blf_ctx * c, word32 * x)
+static void _mcrypt_encrypt(void *ctx, void *block)
 {
+	blf_ctx *c = ctx;
+	word32 *x = block;
 	register word32 Xl;
 	register word32 Xr, temp;
 	short i;
@@ -103,8 +93,10 @@ static void enblf_noswap(blf_ctx * c, word32 * x)
 	x[1] = Xr;
 }
 
-WIN32DLL_DEFINE void _mcrypt_decrypt(blf_ctx * c, word32 * x)
+static void _mcrypt_decrypt(void *ctx, void *block)
 {
+	blf_ctx *c = ctx;
+	word32 *x = block;
 	register word32 Xl, Xr, temp;
 	register short i;
 
@@ -472,41 +464,43 @@ static short initialize_blowfish(blf_ctx * c, unsigned char key[],
 	return 0;
 }
 
-WIN32DLL_DEFINE int _mcrypt_set_key(blf_ctx * c, char *k, int len)
+static int _mcrypt_set_key(void *ctx, const void *key, int len)
 {
+	blf_ctx *c = ctx;
+	const char *k = key;
 	initialize_blowfish(c, (unsigned char *)k, len);
 	return 0;
 }
 
-WIN32DLL_DEFINE int _mcrypt_get_size()
+static int _mcrypt_get_size(void)
 {
 	return sizeof(blf_ctx);
 }
-WIN32DLL_DEFINE int _mcrypt_get_block_size()
+static int _mcrypt_get_block_size(void)
 {
 	return 8;
 }
-WIN32DLL_DEFINE int _is_block_algorithm()
+static int _is_block_algorithm(void)
 {
 	return 1;
 }
-WIN32DLL_DEFINE int _mcrypt_get_key_size()
+static int _mcrypt_get_key_size(void)
 {
 	return 56;
 }
-WIN32DLL_DEFINE const int *_mcrypt_get_supported_key_sizes(int *len)
+static const int *_mcrypt_get_supported_key_sizes(int *len)
 {
 	*len = 0;
 	return NULL;
 }
-WIN32DLL_DEFINE char *_mcrypt_get_algorithms_name()
+static const char *_mcrypt_get_algorithms_name(void)
 {
 return "Blowfish";
 }
 
 #define CIPHER "c8c033bc57874d74"
 
-WIN32DLL_DEFINE int _mcrypt_self_test()
+static int _mcrypt_self_test(void)
 {
 	char *keyword;
 	unsigned char plaintext[16];
@@ -560,8 +554,22 @@ WIN32DLL_DEFINE int _mcrypt_self_test()
 	return 0;
 }
 
-WIN32DLL_DEFINE word32 _mcrypt_algorithm_version()
+static word32 _mcrypt_algorithm_version(void)
 {
 	return 20010801;
 }
 
+const mcrypt_algo_module mcrypt_algo_blowfish = {
+	.name = "blowfish",
+	.set_key = _mcrypt_set_key,
+	.encrypt = _mcrypt_encrypt,
+	.decrypt = _mcrypt_decrypt,
+	.get_size = _mcrypt_get_size,
+	.get_block_size = _mcrypt_get_block_size,
+	.is_block_algo = _is_block_algorithm,
+	.get_key_size = _mcrypt_get_key_size,
+	.get_supported_key_sizes = _mcrypt_get_supported_key_sizes,
+	.get_name = _mcrypt_get_algorithms_name,
+	.self_test = _mcrypt_self_test,
+	.get_version = _mcrypt_algorithm_version
+};

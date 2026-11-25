@@ -26,18 +26,6 @@
 #include <mcrypt_modules.h>
 #include "rijndael.h"
 
-#define _mcrypt_set_key rijndael_128_LTX__mcrypt_set_key
-#define _mcrypt_encrypt rijndael_128_LTX__mcrypt_encrypt
-#define _mcrypt_decrypt rijndael_128_LTX__mcrypt_decrypt
-#define _mcrypt_get_size rijndael_128_LTX__mcrypt_get_size
-#define _mcrypt_get_block_size rijndael_128_LTX__mcrypt_get_block_size
-#define _is_block_algorithm rijndael_128_LTX__is_block_algorithm
-#define _mcrypt_get_key_size rijndael_128_LTX__mcrypt_get_key_size
-#define _mcrypt_get_supported_key_sizes rijndael_128_LTX__mcrypt_get_supported_key_sizes
-#define _mcrypt_get_algorithms_name rijndael_128_LTX__mcrypt_get_algorithms_name
-#define _mcrypt_self_test rijndael_128_LTX__mcrypt_self_test
-#define _mcrypt_algorithm_version rijndael_128_LTX__mcrypt_algorithm_version
-
 /* rotates x one bit to the left */
 
 #define ROTL(x) (((x)>>7)|((x)<<1))
@@ -63,7 +51,7 @@ static int tables_ok = 0;
 
 /* in "rijndael.h" */
 
-static word32 pack(byte * b)
+static word32 pack(const byte * b)
 {				/* pack bytes into a 32-bit Word */
 	return ((word32) b[3] << 24) | ((word32) b[2] << 16) | ((word32)
 								b[1] << 8)
@@ -202,8 +190,10 @@ static void _mcrypt_rijndael_gentables(void)
 	}
 }
 
-WIN32DLL_DEFINE int _mcrypt_set_key(RI * rinst, byte * key, int nk)
+static int _mcrypt_set_key(void *ctx, const void *user_key, int nk)
 {				/* blocksize=32*nb bits. Key=32*nk bits */
+	RI *rinst = ctx;
+	const byte *key = user_key;
 	/* currently nb,bk = 4, 6 or 8          */
 	/* key comes as 4*rinst->Nk bytes              */
 	/* Key Scheduler. Create expanded encryption key */
@@ -309,8 +299,10 @@ WIN32DLL_DEFINE int _mcrypt_set_key(RI * rinst, byte * key, int nk)
  * Instead of just one ftable[], I could have 4, the other     *
  * 3 pre-rotated to save the ROTL8, ROTL16 and ROTL24 overhead */
 
-WIN32DLL_DEFINE void _mcrypt_encrypt(RI * rinst, byte * buff)
+static void _mcrypt_encrypt(void *ctx, void *block)
 {
+	RI *rinst = ctx;
+	byte *buff = block;
 	int i, j, k, m;
 	word32 a[8], b[8], *x, *y, *t;
 
@@ -356,8 +348,10 @@ WIN32DLL_DEFINE void _mcrypt_encrypt(RI * rinst, byte * buff)
 	return;
 }
 
-WIN32DLL_DEFINE void _mcrypt_decrypt(RI * rinst, byte * buff)
+static void _mcrypt_decrypt(void *ctx, void *block)
 {
+	RI *rinst = ctx;
+	byte *buff = block;
 	int i, j, k, m;
 	word32 a[8], b[8], *x, *y, *t;
 
@@ -403,37 +397,37 @@ WIN32DLL_DEFINE void _mcrypt_decrypt(RI * rinst, byte * buff)
 }
 
 
-WIN32DLL_DEFINE int _mcrypt_get_size()
+static int _mcrypt_get_size(void)
 {
 	return sizeof(RI);
 }
-WIN32DLL_DEFINE int _mcrypt_get_block_size()
+static int _mcrypt_get_block_size(void)
 {
 	return 16;
 }
-WIN32DLL_DEFINE int _is_block_algorithm()
+static int _is_block_algorithm(void)
 {
 	return 1;
 }
-WIN32DLL_DEFINE int _mcrypt_get_key_size()
+static int _mcrypt_get_key_size(void)
 {
 	return 32;
 }
 
 static const int key_sizes[] = { 16, 24 ,32 };
-WIN32DLL_DEFINE const int *_mcrypt_get_supported_key_sizes(int *len)
+static const int *_mcrypt_get_supported_key_sizes(int *len)
 {
 	*len = sizeof(key_sizes)/sizeof(int);
 	return key_sizes;
 }
-WIN32DLL_DEFINE char *_mcrypt_get_algorithms_name()
+static const char *_mcrypt_get_algorithms_name(void)
 {
 return "Rijndael-128";
 }
 
 #define CIPHER "5352e43763eec1a8502433d6d520b1f0"
 
-WIN32DLL_DEFINE int _mcrypt_self_test()
+static int _mcrypt_self_test(void)
 {
 	char *keyword;
 	unsigned char plaintext[32];
@@ -492,8 +486,22 @@ WIN32DLL_DEFINE int _mcrypt_self_test()
 	return 0;
 }
 
-WIN32DLL_DEFINE word32 _mcrypt_algorithm_version()
+static word32 _mcrypt_algorithm_version(void)
 {
 	return 20010801;
 }
 
+const mcrypt_algo_module mcrypt_algo_rijndael_128 = {
+	.name = "rijndael-128",
+	.set_key = _mcrypt_set_key,
+	.encrypt = _mcrypt_encrypt,
+	.decrypt = _mcrypt_decrypt,
+	.get_size = _mcrypt_get_size,
+	.get_block_size = _mcrypt_get_block_size,
+	.is_block_algo = _is_block_algorithm,
+	.get_key_size = _mcrypt_get_key_size,
+	.get_supported_key_sizes = _mcrypt_get_supported_key_sizes,
+	.get_name = _mcrypt_get_algorithms_name,
+	.self_test = _mcrypt_self_test,
+	.get_version = _mcrypt_algorithm_version
+};

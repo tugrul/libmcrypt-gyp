@@ -22,34 +22,25 @@
 #include <stdlib.h>
 #include "arcfour.h"
 
-#define _mcrypt_set_key arcfour_LTX__mcrypt_set_key
-#define _mcrypt_encrypt arcfour_LTX__mcrypt_encrypt
-#define _mcrypt_decrypt arcfour_LTX__mcrypt_decrypt
-#define _mcrypt_get_size arcfour_LTX__mcrypt_get_size
-#define _mcrypt_get_block_size arcfour_LTX__mcrypt_get_block_size
-#define _is_block_algorithm arcfour_LTX__is_block_algorithm
-#define _mcrypt_get_key_size arcfour_LTX__mcrypt_get_key_size
-#define _mcrypt_get_algo_iv_size arcfour_LTX__mcrypt_get_algo_iv_size
-#define _mcrypt_get_supported_key_sizes arcfour_LTX__mcrypt_get_supported_key_sizes
-#define _mcrypt_get_algorithms_name arcfour_LTX__mcrypt_get_algorithms_name
-#define _mcrypt_self_test arcfour_LTX__mcrypt_self_test
-#define _mcrypt_algorithm_version arcfour_LTX__mcrypt_algorithm_version
-
 #define swap_byte(x,y) tmp = (x); (x) = (y); (y) = tmp
 
 /* #define USE_IV */
 /* IV was an mcrypt extension */
 
-WIN32DLL_DEFINE void _mcrypt_encrypt(arcfour_key * key, byte * buffer_ptr, int buffer_len);
+static void _mcrypt_encrypt(void *ctx, void *data, int buffer_len);
 
 /* key is the state that should be allocated by the caller */
 #define STATE key->state
 #define I key->i
 #define J key->j
-WIN32DLL_DEFINE
-    int _mcrypt_set_key(arcfour_key * key, byte * key_data, int key_len,
-			char *IV, int iv_len)
+static int _mcrypt_set_key(void *ctx, const void *user_key, int key_len,
+                           const void *iv, int iv_len)
 {
+	arcfour_key *key = ctx;
+	const byte *key_data = user_key;
+#ifdef USE_IV
+	const char *IV = iv;
+#endif
 	register int tmp, j, i;
 	byte *state = STATE;
     #ifdef USE_IV
@@ -81,10 +72,10 @@ WIN32DLL_DEFINE
 	return 0;
 }
 
-WIN32DLL_DEFINE
-    void _mcrypt_encrypt(arcfour_key * key, byte * buffer_ptr,
-			 int buffer_len)
+static void _mcrypt_encrypt(void *ctx, void *data, int buffer_len)
 {
+	arcfour_key *key = ctx;
+	byte *buffer_ptr = data;
 	register int tmp;
 	register int counter;
 	register int i = I, j = J;
@@ -106,22 +97,22 @@ WIN32DLL_DEFINE
 }
 
 /* this is the same with mcrypt_encrypt */
-WIN32DLL_DEFINE
-    void _mcrypt_decrypt(arcfour_key * key, byte * buffer_ptr,
-			 int buffer_len)
+static void _mcrypt_decrypt(void *ctx, void *data, int buffer_len)
 {
+	arcfour_key *key = ctx;
+	byte *buffer_ptr = data;
 	_mcrypt_encrypt(key, buffer_ptr, buffer_len);
 }
 
-WIN32DLL_DEFINE int _mcrypt_get_size()
+static int _mcrypt_get_size(void)
 {
 	return sizeof(arcfour_key);
 }
-WIN32DLL_DEFINE int _mcrypt_get_block_size()
+static int _mcrypt_get_block_size(void)
 {
 	return 1;
 }
-WIN32DLL_DEFINE int _mcrypt_get_algo_iv_size()
+static int _mcrypt_get_algo_iv_size(void)
 {
 #ifdef USE_IV
 	return 32;
@@ -129,27 +120,27 @@ WIN32DLL_DEFINE int _mcrypt_get_algo_iv_size()
 	return 0;
 #endif
 }
-WIN32DLL_DEFINE int _is_block_algorithm()
+static int _is_block_algorithm(void)
 {
 	return 0;
 }
-WIN32DLL_DEFINE int _mcrypt_get_key_size()
+static int _mcrypt_get_key_size(void)
 {
 	return 256;
 }
-WIN32DLL_DEFINE const int *_mcrypt_get_supported_key_sizes(int *len)
+static const int *_mcrypt_get_supported_key_sizes(int *len)
 {
 	*len = 0;
 	return NULL;
 }
-WIN32DLL_DEFINE const char *_mcrypt_get_algorithms_name()
+static const char *_mcrypt_get_algorithms_name(void)
 {
 return "RC4";
 }
 
 #define CIPHER "3abaa03a286e24c4196d292ab72934d6854c3eee"
 
-WIN32DLL_DEFINE int _mcrypt_self_test()
+static int _mcrypt_self_test(void)
 {
 	char *keyword;
 	unsigned char plaintext[20];
@@ -207,7 +198,23 @@ WIN32DLL_DEFINE int _mcrypt_self_test()
 	return 0;
 }
 
-WIN32DLL_DEFINE word32 _mcrypt_algorithm_version()
+static word32 _mcrypt_algorithm_version(void)
 {
 	return 20020610;
 }
+
+const mcrypt_algo_module mcrypt_algo_arcfour = {
+	.name = "arcfour",
+	.stream_set_key = _mcrypt_set_key,
+	.stream_encrypt = _mcrypt_encrypt,
+	.stream_decrypt = _mcrypt_decrypt,
+	.get_size = _mcrypt_get_size,
+	.get_block_size = _mcrypt_get_block_size,
+	.is_block_algo = _is_block_algorithm,
+	.get_key_size = _mcrypt_get_key_size,
+	.get_algo_iv_size = _mcrypt_get_algo_iv_size,
+	.get_supported_key_sizes = _mcrypt_get_supported_key_sizes,
+	.get_name = _mcrypt_get_algorithms_name,
+	.self_test = _mcrypt_self_test,
+	.get_version = _mcrypt_algorithm_version
+};

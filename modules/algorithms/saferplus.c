@@ -69,18 +69,6 @@ Mean:         3392 cycles =     7.5 mbits/sec
 #include "saferplus.h"
 #include <stdlib.h>
 
-#define _mcrypt_set_key saferplus_LTX__mcrypt_set_key
-#define _mcrypt_encrypt saferplus_LTX__mcrypt_encrypt
-#define _mcrypt_decrypt saferplus_LTX__mcrypt_decrypt
-#define _mcrypt_get_size saferplus_LTX__mcrypt_get_size
-#define _mcrypt_get_block_size saferplus_LTX__mcrypt_get_block_size
-#define _is_block_algorithm saferplus_LTX__is_block_algorithm
-#define _mcrypt_get_key_size saferplus_LTX__mcrypt_get_key_size
-#define _mcrypt_get_supported_key_sizes saferplus_LTX__mcrypt_get_supported_key_sizes
-#define _mcrypt_get_algorithms_name saferplus_LTX__mcrypt_get_algorithms_name
-#define _mcrypt_self_test saferplus_LTX__mcrypt_self_test
-#define _mcrypt_algorithm_version saferplus_LTX__mcrypt_algorithm_version
-
 byte safer_expf[256] =
     { 1, 45, 226, 147, 190, 69, 21, 174, 120, 3, 135, 164, 184, 56, 207,
 	63,
@@ -188,10 +176,11 @@ byte safer_logf[512] = {
 /* byte  l_key[33 * 16]; */
 /* word32  k_bytes; */
 
-WIN32DLL_DEFINE
-    int _mcrypt_set_key(SPI * sp_key, const word32 * in_key,
-			const word32 key_len)
+static int _mcrypt_set_key(void *ctx, const void *key, int len)
 {
+	SPI *sp_key = ctx;
+	const word32 *in_key = key;
+	const word32 key_len = (word32) len;
 	word32 wlk[9]; /* 36 bytes */
 	byte *lk = (void*)wlk, by; /* lk should have 33 bytes */
 	word32 i, j, k, l, m, *lkp = wlk;
@@ -466,8 +455,10 @@ void do_ir(byte x[16], byte * kp)
 	x[15] = safer_logf[x[15] - kp[31] + 256] ^ kp[15];
 }
 
-WIN32DLL_DEFINE void _mcrypt_encrypt(SPI * spi, word32 * _blk)
+static void _mcrypt_encrypt(void *ctx, void *block)
 {
+	SPI *spi = ctx;
+	word32 *_blk = block;
 	byte *kp;
 	word32 __blk[16];
 	byte *blk = (void *) __blk;
@@ -527,8 +518,10 @@ WIN32DLL_DEFINE void _mcrypt_encrypt(SPI * spi, word32 * _blk)
 
 
 
-WIN32DLL_DEFINE void _mcrypt_decrypt(SPI * spi, word32 * _blk)
+static void _mcrypt_decrypt(void *ctx, void *block)
 {
+	SPI *spi = ctx;
+	word32 *_blk = block;
 	byte *kp;
 	word32 __blk[16];
 	byte *blk = (void *) __blk;
@@ -588,37 +581,37 @@ WIN32DLL_DEFINE void _mcrypt_decrypt(SPI * spi, word32 * _blk)
 
 
 
-WIN32DLL_DEFINE int _mcrypt_get_size()
+static int _mcrypt_get_size(void)
 {
 	return sizeof(SPI);
 }
-WIN32DLL_DEFINE int _mcrypt_get_block_size()
+static int _mcrypt_get_block_size(void)
 {
 	return 16;
 }
-WIN32DLL_DEFINE int _is_block_algorithm()
+static int _is_block_algorithm(void)
 {
 	return 1;
 }
-WIN32DLL_DEFINE int _mcrypt_get_key_size()
+static int _mcrypt_get_key_size(void)
 {
 	return 32;
 }
 static const int key_sizes[] = { 16,24,32 };
-WIN32DLL_DEFINE const int *_mcrypt_get_supported_key_sizes(int *len)
+static const int *_mcrypt_get_supported_key_sizes(int *len)
 {
 	*len = sizeof(key_sizes)/sizeof(int);
 	return key_sizes;
 
 }
-WIN32DLL_DEFINE char *_mcrypt_get_algorithms_name()
+static const char *_mcrypt_get_algorithms_name(void)
 {
 return "Safer+";
 }
 
 #define CIPHER "97fa76704bf6b578549f65c6f75b228b"
 
-WIN32DLL_DEFINE int _mcrypt_self_test()
+static int _mcrypt_self_test(void)
 {
 	char *keyword;
 	unsigned char plaintext[16];
@@ -672,7 +665,22 @@ WIN32DLL_DEFINE int _mcrypt_self_test()
 	return 0;
 }
 
-WIN32DLL_DEFINE word32 _mcrypt_algorithm_version()
+static word32 _mcrypt_algorithm_version(void)
 {
 	return 20010801;
 }
+
+const mcrypt_algo_module mcrypt_algo_saferplus = {
+	.name = "saferplus",
+	.set_key = _mcrypt_set_key,
+	.encrypt = _mcrypt_encrypt,
+	.decrypt = _mcrypt_decrypt,
+	.get_size = _mcrypt_get_size,
+	.get_block_size = _mcrypt_get_block_size,
+	.is_block_algo = _is_block_algorithm,
+	.get_key_size = _mcrypt_get_key_size,
+	.get_supported_key_sizes = _mcrypt_get_supported_key_sizes,
+	.get_name = _mcrypt_get_algorithms_name,
+	.self_test = _mcrypt_self_test,
+	.get_version = _mcrypt_algorithm_version
+};

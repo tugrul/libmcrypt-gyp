@@ -20,19 +20,6 @@
 #include <libdefs.h>
 #include <mcrypt_modules.h>
 
-#define _init_mcrypt ctr_LTX__init_mcrypt
-#define _mcrypt_set_state ctr_LTX__mcrypt_set_state
-#define _mcrypt_get_state ctr_LTX__mcrypt_get_state
-#define _end_mcrypt ctr_LTX__end_mcrypt
-#define _mcrypt ctr_LTX__mcrypt
-#define _mdecrypt ctr_LTX__mdecrypt
-#define _has_iv ctr_LTX__has_iv
-#define _is_block_mode ctr_LTX__is_block_mode
-#define _is_block_algorithm_mode ctr_LTX__is_block_algorithm_mode
-#define _mcrypt_get_modes_name ctr_LTX__mcrypt_get_modes_name
-#define _mcrypt_mode_get_size ctr_LTX__mcrypt_mode_get_size
-#define _mcrypt_mode_version ctr_LTX__mcrypt_mode_version
-
 typedef struct ctr_buf {
 	byte* enc_counter;
 	byte* c_counter;
@@ -65,8 +52,10 @@ register int i, y=0;
 /* size holds the size of the IV (counter in this mode).
  * This is the block size.
  */
-int _init_mcrypt( CTR_BUFFER* buf, void *key, int lenofkey, void *IV, int size)
+static int _init_mcrypt(void *abuf, const void *key, int lenofkey,
+                        const void *IV, int size)
 {
+	CTR_BUFFER *buf = abuf;
     buf->c_counter = buf->enc_counter = NULL;
     
 /* For ctr */
@@ -93,8 +82,10 @@ int _init_mcrypt( CTR_BUFFER* buf, void *key, int lenofkey, void *IV, int size)
 		return -1;
 }
 
-int _mcrypt_set_state( CTR_BUFFER* buf, byte *IV, int size)
+static int _mcrypt_set_state(void *abuf, const void *iv, int size)
 {
+	CTR_BUFFER *buf = abuf;
+	const byte *IV = iv;
 	buf->c_counter_pos = IV[0];
 	memcpy(buf->c_counter, &IV[1], size-1);
 	memcpy(buf->enc_counter, &IV[1], size-1);
@@ -102,8 +93,10 @@ int _mcrypt_set_state( CTR_BUFFER* buf, byte *IV, int size)
 	return 0;
 }
 
-int _mcrypt_get_state( CTR_BUFFER* buf, byte *IV, int *size)
+static int _mcrypt_get_state(void *abuf, void *iv, int *size)
 {
+	CTR_BUFFER *buf = abuf;
+	byte *IV = iv;
 	if (*size < buf->blocksize + 1) {
 		*size = buf->blocksize + 1;
 		return -1;
@@ -117,9 +110,11 @@ int _mcrypt_get_state( CTR_BUFFER* buf, byte *IV, int *size)
 }
 
 
-void _end_mcrypt( CTR_BUFFER* buf) {
+static int _end_mcrypt(void *abuf) {
+	CTR_BUFFER *buf = abuf;
 	free(buf->c_counter);
 	free(buf->enc_counter);
+	return 0;
 }
 
 inline static
@@ -192,8 +187,10 @@ void xor_stuff( CTR_BUFFER *buf, void* akey, void (*func)(void*,void*), byte* pl
 	return;
 }
 
-int _mcrypt( CTR_BUFFER* buf,void *plaintext, int len, int blocksize, void* akey, void (*func)(void*,void*), void (*func2)(void*,void*))
+static int _mcrypt(void *abuf, void *plaintext, int len, int blocksize,
+                   void *akey, const mcrypt_algo_module *algo)
 {				/* plaintext can be any size */
+	CTR_BUFFER *buf = abuf;
 	byte *plain;
 	int j=0;
 	int modlen;
@@ -201,7 +198,7 @@ int _mcrypt( CTR_BUFFER* buf,void *plaintext, int len, int blocksize, void* akey
 	plain = plaintext;
 	for (j = 0; j < len / blocksize; j++) {
 
-		xor_stuff( buf, akey, func, plain, blocksize, blocksize);
+		xor_stuff( buf, akey, algo->encrypt, plain, blocksize, blocksize);
 
 		plain += blocksize;
 
@@ -215,7 +212,7 @@ int _mcrypt( CTR_BUFFER* buf,void *plaintext, int len, int blocksize, void* akey
 		 * able to decrypt it.
 		 */
 
-		xor_stuff( buf, akey, func, plain, blocksize, modlen);
+		xor_stuff( buf, akey, algo->encrypt, plain, blocksize, modlen);
 
 	}
 	
@@ -223,19 +220,36 @@ int _mcrypt( CTR_BUFFER* buf,void *plaintext, int len, int blocksize, void* akey
 }
 
 
-int _mdecrypt( CTR_BUFFER* buf,void *plaintext, int len, int blocksize, void* akey, void (*func)(void*,void*), void (*func2)(void*,void*))
+static int _mdecrypt(void *abuf, void *plaintext, int len, int blocksize,
+                     void *akey, const mcrypt_algo_module *algo)
 {				/* plaintext can be any size */
-	return _mcrypt( buf, plaintext, len, blocksize, akey, func, func2);
+	CTR_BUFFER *buf = abuf;
+	return _mcrypt( buf, plaintext, len, blocksize, akey, algo);
 }
 
-int _has_iv() { return 1; }
-int _is_block_mode() { return 0; }
-int _is_block_algorithm_mode() { return 1; }
-const char *_mcrypt_get_modes_name() { return "CTR";}
-int _mcrypt_mode_get_size () {return sizeof(CTR_BUFFER);}
+static int _has_iv(void) { return 1; }
+static int _is_block_mode(void) { return 0; }
+static int _is_block_algorithm_mode(void) { return 1; }
+static const char *_mcrypt_get_modes_name(void) { return "CTR";}
+static int _mcrypt_mode_get_size(void) {return sizeof(CTR_BUFFER);}
 
 
-word32 _mcrypt_mode_version() {
+static word32 _mcrypt_mode_version(void) {
 	return 20020307;
 }
 
+const mcrypt_mode_module mcrypt_mode_ctr = {
+	.name = "ctr",
+	.init = _init_mcrypt,
+	.set_state = _mcrypt_set_state,
+	.get_state = _mcrypt_get_state,
+	.end = _end_mcrypt,
+	.encrypt = _mcrypt,
+	.decrypt = _mdecrypt,
+	.has_iv = _has_iv,
+	.is_block_mode = _is_block_mode,
+	.is_block_algo_mode = _is_block_algorithm_mode,
+	.get_name = _mcrypt_get_modes_name,
+	.get_size = _mcrypt_mode_get_size,
+	.get_version = _mcrypt_mode_version
+};

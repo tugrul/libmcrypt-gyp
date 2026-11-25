@@ -20,18 +20,6 @@
 #include <mcrypt_modules.h>
 #include "cast-128.h"
 
-#define _mcrypt_set_key cast_128_LTX__mcrypt_set_key
-#define _mcrypt_encrypt cast_128_LTX__mcrypt_encrypt
-#define _mcrypt_decrypt cast_128_LTX__mcrypt_decrypt
-#define _mcrypt_get_size cast_128_LTX__mcrypt_get_size
-#define _mcrypt_get_block_size cast_128_LTX__mcrypt_get_block_size
-#define _is_block_algorithm cast_128_LTX__is_block_algorithm
-#define _mcrypt_get_key_size cast_128_LTX__mcrypt_get_key_size
-#define _mcrypt_get_supported_key_sizes cast_128_LTX__mcrypt_get_supported_key_sizes
-#define _mcrypt_get_algorithms_name cast_128_LTX__mcrypt_get_algorithms_name
-#define _mcrypt_self_test cast_128_LTX__mcrypt_self_test
-#define _mcrypt_algorithm_version cast_128_LTX__mcrypt_algorithm_version
-
 #define u8 byte
 #define u32 word32
 
@@ -65,8 +53,10 @@
 
 /***** Encryption Function *****/
 
-WIN32DLL_DEFINE void _mcrypt_encrypt(CAST_KEY * key, u8 * block)
+static void _mcrypt_encrypt(void *ctx, void *data)
 {
+	CAST_KEY *key = ctx;
+	u8 *block = data;
 	u32 t, l, r;
 
 	/* Get inblock into l,r */
@@ -110,8 +100,10 @@ WIN32DLL_DEFINE void _mcrypt_encrypt(CAST_KEY * key, u8 * block)
 
 /***** Decryption Function *****/
 
-WIN32DLL_DEFINE void _mcrypt_decrypt(CAST_KEY * key, u8 * block)
+static void _mcrypt_decrypt(void *ctx, void *data)
 {
+	CAST_KEY *key = ctx;
+	u8 *block = data;
 	u32 t, l, r;
 
 	/* Get inblock into l,r */
@@ -155,9 +147,11 @@ WIN32DLL_DEFINE void _mcrypt_decrypt(CAST_KEY * key, u8 * block)
 
 /***** Key Schedual *****/
 
-WIN32DLL_DEFINE
-    int _mcrypt_set_key(CAST_KEY * key, u8 * rawkey, unsigned keybytes)
+static int _mcrypt_set_key(void *ctx, const void *user_key, int len)
 {
+	CAST_KEY *key = ctx;
+	const u8 *rawkey = user_key;
+	unsigned keybytes = (unsigned) len;
 	u32 t[4], z[4], x[4];
 	unsigned i;
 
@@ -304,39 +298,39 @@ WIN32DLL_DEFINE
 /* Made in Canada */
 
 
-WIN32DLL_DEFINE int _mcrypt_get_size()
+static int _mcrypt_get_size(void)
 {
 	return sizeof(CAST_KEY);
 }
-WIN32DLL_DEFINE int _mcrypt_get_block_size()
+static int _mcrypt_get_block_size(void)
 {
 	return 8;
 }
-WIN32DLL_DEFINE int _is_block_algorithm()
+static int _is_block_algorithm(void)
 {
 	return 1;
 }
-WIN32DLL_DEFINE int _mcrypt_get_key_size()
+static int _mcrypt_get_key_size(void)
 {
 	return 16;
 }
 
 static const int key_sizes[] = { 16 };
-WIN32DLL_DEFINE const int *_mcrypt_get_supported_key_sizes(int *len)
+static const int *_mcrypt_get_supported_key_sizes(int *len)
 {
 	*len = sizeof(key_sizes)/sizeof(int);
 	return key_sizes;
 
 }
 
-WIN32DLL_DEFINE const char *_mcrypt_get_algorithms_name()
+static const char *_mcrypt_get_algorithms_name(void)
 {
 return "CAST-128";
 }
 
 #define CIPHER "434e25460c8c9525"
 
-WIN32DLL_DEFINE int _mcrypt_self_test()
+static int _mcrypt_self_test(void)
 {
 	char *keyword;
 	unsigned char plaintext[16];
@@ -389,8 +383,22 @@ WIN32DLL_DEFINE int _mcrypt_self_test()
 	return 0;
 }
 
-WIN32DLL_DEFINE word32 _mcrypt_algorithm_version()
+static word32 _mcrypt_algorithm_version(void)
 {
 	return 20010801;
 }
 
+const mcrypt_algo_module mcrypt_algo_cast_128 = {
+	.name = "cast-128",
+	.set_key = _mcrypt_set_key,
+	.encrypt = _mcrypt_encrypt,
+	.decrypt = _mcrypt_decrypt,
+	.get_size = _mcrypt_get_size,
+	.get_block_size = _mcrypt_get_block_size,
+	.is_block_algo = _is_block_algorithm,
+	.get_key_size = _mcrypt_get_key_size,
+	.get_supported_key_sizes = _mcrypt_get_supported_key_sizes,
+	.get_name = _mcrypt_get_algorithms_name,
+	.self_test = _mcrypt_self_test,
+	.get_version = _mcrypt_algorithm_version
+};

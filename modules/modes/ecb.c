@@ -22,37 +22,26 @@
 
 /* EBC MODE */
 
-#define _mcrypt_set_state ecb_LTX__mcrypt_set_state
-#define _mcrypt_get_state ecb_LTX__mcrypt_get_state
-#define _init_mcrypt ecb_LTX__init_mcrypt
-#define _end_mcrypt ecb_LTX__end_mcrypt
-#define _mcrypt ecb_LTX__mcrypt
-#define _mdecrypt ecb_LTX__mdecrypt
-#define _has_iv ecb_LTX__has_iv
-#define _is_block_mode ecb_LTX__is_block_mode
-#define _is_block_algorithm_mode ecb_LTX__is_block_algorithm_mode
-#define _mcrypt_get_modes_name ecb_LTX__mcrypt_get_modes_name
-#define _mcrypt_mode_get_size ecb_LTX__mcrypt_mode_get_size
-#define _mcrypt_mode_version ecb_LTX__mcrypt_mode_version
-
-int _init_mcrypt( void* ign, void *key, int lenofkey, void *IV, int size)
+static int _init_mcrypt(void *ign, const void *key, int lenofkey,
+                        const void *IV, int size)
 {
 	return 0;
 
 }
 
-int _mcrypt_set_state( void* buf, void *IV, int size) { return -1; }
-int _mcrypt_get_state( void* buf, void *IV, int *size) { return -1; }
+static int _mcrypt_set_state(void *buf, const void *IV, int size) { return -1; }
+static int _mcrypt_get_state(void *buf, void *IV, int *size) { return -1; }
 
-int _end_mcrypt (void* buf) {return 0;}
+static int _end_mcrypt(void *buf) {return 0;}
 
-int _mcrypt( void* ign, void *plaintext, int len, int blocksize, void* akey, void (*func)(void*,void*), void (*func2)(void*,void*))
+static int _mcrypt(void *ign, void *plaintext, int len, int blocksize,
+                   void *akey, const mcrypt_algo_module *algo)
 {
 	int j;
 	char *plain = plaintext;
 	void (*_mcrypt_block_encrypt) (void *, void *);
 
-	_mcrypt_block_encrypt = func;
+	_mcrypt_block_encrypt = algo->encrypt;
 	
 	for (j = 0; j < len / blocksize; j++) {
 		_mcrypt_block_encrypt(akey, &plain[j * blocksize]);
@@ -63,13 +52,14 @@ int _mcrypt( void* ign, void *plaintext, int len, int blocksize, void* akey, voi
 
 
 
-int _mdecrypt( void* ign, void *ciphertext, int len, int blocksize, void* akey, void (*func)(void*,void*), void (*func2)(void*,void*))
+static int _mdecrypt(void *ign, void *ciphertext, int len, int blocksize,
+                     void *akey, const mcrypt_algo_module *algo)
 {
 	int j;
 	char *cipher = ciphertext;
 	void (*_mcrypt_block_decrypt) (void *, void *);
 
-	_mcrypt_block_decrypt = func2;
+	_mcrypt_block_decrypt = algo->decrypt;
 	
 	for (j = 0; j < len / blocksize; j++) {
 		_mcrypt_block_decrypt(akey, &cipher[j * blocksize]);
@@ -78,13 +68,28 @@ int _mdecrypt( void* ign, void *ciphertext, int len, int blocksize, void* akey, 
 	return 0;
 }
 
-int _has_iv() { return 0; }
-int _is_block_mode() { return 1; }
-int _is_block_algorithm_mode() { return 1; }
-const char *_mcrypt_get_modes_name() { return "ECB";}
-int _mcrypt_mode_get_size () {return 0;}
+static int _has_iv(void) { return 0; }
+static int _is_block_mode(void) { return 1; }
+static int _is_block_algorithm_mode(void) { return 1; }
+static const char *_mcrypt_get_modes_name(void) { return "ECB";}
+static int _mcrypt_mode_get_size(void) {return 0;}
 
-word32 _mcrypt_mode_version() {
+static word32 _mcrypt_mode_version(void) {
 	return 20010801;
 }
 
+const mcrypt_mode_module mcrypt_mode_ecb = {
+	.name = "ecb",
+	.init = _init_mcrypt,
+	.set_state = _mcrypt_set_state,
+	.get_state = _mcrypt_get_state,
+	.end = _end_mcrypt,
+	.encrypt = _mcrypt,
+	.decrypt = _mdecrypt,
+	.has_iv = _has_iv,
+	.is_block_mode = _is_block_mode,
+	.is_block_algo_mode = _is_block_algorithm_mode,
+	.get_name = _mcrypt_get_modes_name,
+	.get_size = _mcrypt_mode_get_size,
+	.get_version = _mcrypt_mode_version
+};

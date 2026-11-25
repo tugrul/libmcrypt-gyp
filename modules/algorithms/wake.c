@@ -22,19 +22,6 @@
 #include <mcrypt_modules.h>
 #include "wake.h"
 
-#define _mcrypt_set_key wake_LTX__mcrypt_set_key
-#define _mcrypt_encrypt wake_LTX__mcrypt_encrypt
-#define _mcrypt_decrypt wake_LTX__mcrypt_decrypt
-#define _mcrypt_get_size wake_LTX__mcrypt_get_size
-#define _mcrypt_get_block_size wake_LTX__mcrypt_get_block_size
-#define _is_block_algorithm wake_LTX__is_block_algorithm
-#define _mcrypt_get_key_size wake_LTX__mcrypt_get_key_size
-#define _mcrypt_get_algo_iv_size wake_LTX__mcrypt_get_algo_iv_size
-#define _mcrypt_get_supported_key_sizes wake_LTX__mcrypt_get_supported_key_sizes
-#define _mcrypt_get_algorithms_name wake_LTX__mcrypt_get_algorithms_name
-#define _mcrypt_self_test wake_LTX__mcrypt_self_test
-#define _mcrypt_algorithm_version wake_LTX__mcrypt_algorithm_version
-
 /* WAKE reference C-code, based on the description in David J. Wheeler's
  * paper "A bulk Data Encryption Algorithm"
  */
@@ -53,10 +40,14 @@ static const word32 tt[10] = {
 	0x9ee27cf3UL
 };
 
-WIN32DLL_DEFINE
-    int _mcrypt_set_key(WAKE_KEY * wake_key, word32 * key, int len,
-			word32 * IV, int ivlen)
+static int _mcrypt_set_key(void *ctx, const void *user_key, int len,
+                           const void *iv, int ivlen)
 {
+	WAKE_KEY *wake_key = ctx;
+	const word32 *key = user_key;
+#ifdef USE_IV
+	const word32 *IV = iv;
+#endif
 	word32 x, z, p;
 	word32 k[4];
 /* the key must be exactly 256 bits */
@@ -146,9 +137,10 @@ inline static word32 _int_M(word32 X, word32 Y, WAKE_KEY * wake_key)
 	return ((((TMP) >> 8) & 0x00ffffff) ^ wake_key->t[(TMP) & 0xff]);
 }
 
-WIN32DLL_DEFINE
-    void _mcrypt_encrypt(WAKE_KEY * wake_key, byte * input, int len)
+static void _mcrypt_encrypt(void *ctx, void *data, int len)
 {
+	WAKE_KEY *wake_key = ctx;
+	byte *input = data;
 	register word32 r3, r4, r5;
 	word32 r6;
 	int i;
@@ -205,9 +197,10 @@ WIN32DLL_DEFINE
 }
 
 
-WIN32DLL_DEFINE
-    void _mcrypt_decrypt(WAKE_KEY * wake_key, byte * input, int len)
+static void _mcrypt_decrypt(void *ctx, void *data, int len)
 {
+	WAKE_KEY *wake_key = ctx;
+	byte *input = data;
 	register word32 r3, r4, r5;
 	word32 r6;
 	int i;
@@ -268,15 +261,15 @@ WIN32DLL_DEFINE
 }
 
 
-WIN32DLL_DEFINE int _mcrypt_get_size()
+static int _mcrypt_get_size(void)
 {
 	return sizeof(WAKE_KEY);
 }
-WIN32DLL_DEFINE int _mcrypt_get_block_size()
+static int _mcrypt_get_block_size(void)
 {
 	return 1;
 }
-WIN32DLL_DEFINE int _mcrypt_get_algo_iv_size()
+static int _mcrypt_get_algo_iv_size(void)
 {
 #ifdef USE_IV
 	return 32;
@@ -284,30 +277,30 @@ WIN32DLL_DEFINE int _mcrypt_get_algo_iv_size()
 	return 0;
 #endif
 }
-WIN32DLL_DEFINE int _is_block_algorithm()
+static int _is_block_algorithm(void)
 {
 	return 0;
 }
-WIN32DLL_DEFINE int _mcrypt_get_key_size()
+static int _mcrypt_get_key_size(void)
 {
 	return 32;
 }
 
 static const int key_sizes[] = { 32 };
-WIN32DLL_DEFINE const int *_mcrypt_get_supported_key_sizes(int *len)
+static const int *_mcrypt_get_supported_key_sizes(int *len)
 {
 	*len = sizeof(key_sizes)/sizeof(int);
 	return key_sizes;
 }
 
-WIN32DLL_DEFINE const char *_mcrypt_get_algorithms_name()
+static const char *_mcrypt_get_algorithms_name(void)
 {
 return "WAKE";
 }
 
 #define CIPHER "434d575db053acfe6e4076f05298bedbd5f4f000be555d029b1367cffc7cd51bba61c76aa17da3530fb7d9"
 
-WIN32DLL_DEFINE int _mcrypt_self_test()
+static int _mcrypt_self_test(void)
 {
 	unsigned char *keyword;
 	unsigned char plaintext[43];
@@ -362,8 +355,23 @@ WIN32DLL_DEFINE int _mcrypt_self_test()
 	return 0;
 }
 
-WIN32DLL_DEFINE word32 _mcrypt_algorithm_version()
+static word32 _mcrypt_algorithm_version(void)
 {
 	return 20010801;
 }
 
+const mcrypt_algo_module mcrypt_algo_wake = {
+	.name = "wake",
+	.stream_set_key = _mcrypt_set_key,
+	.stream_encrypt = _mcrypt_encrypt,
+	.stream_decrypt = _mcrypt_decrypt,
+	.get_size = _mcrypt_get_size,
+	.get_block_size = _mcrypt_get_block_size,
+	.is_block_algo = _is_block_algorithm,
+	.get_key_size = _mcrypt_get_key_size,
+	.get_algo_iv_size = _mcrypt_get_algo_iv_size,
+	.get_supported_key_sizes = _mcrypt_get_supported_key_sizes,
+	.get_name = _mcrypt_get_algorithms_name,
+	.self_test = _mcrypt_self_test,
+	.get_version = _mcrypt_algorithm_version
+};

@@ -36,3 +36,19 @@ Then #include <mcrypt.h>. To build and test the library on its own:
     cmake -S . -B build
     cmake --build build
     ctest --test-dir build --output-on-failure
+
+** How the modules are wired together:
+
+Every algorithm (modules/algorithms/*.c) and every mode (modules/modes/*.c)
+keeps its functions static and exports one constant structure of function
+pointers, its descriptor: mcrypt_algo_rijndael_128, mcrypt_mode_cbc and so
+on. lib/mcrypt_registry.h defines the two structure types and declares the
+descriptors; lib/mcrypt_registry.c lists the ones mcrypt_module_open() finds
+by name.
+
+Upstream gave every module function a name-mangled global symbol instead
+(rijndael_128_LTX__mcrypt_set_key) and generated a table of them,
+lib/mcrypt_symb.c, at configure time.
+
+3-way, panama, safer-sk64 and safer-sk128 are compiled and have descriptors
+but are not listed, as in upstream's default build.

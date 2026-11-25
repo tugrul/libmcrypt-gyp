@@ -14,18 +14,6 @@
 
 #include <mcrypt_modules.h>
 
-#define _mcrypt_set_key xtea_LTX__mcrypt_set_key
-#define _mcrypt_encrypt xtea_LTX__mcrypt_encrypt
-#define _mcrypt_decrypt xtea_LTX__mcrypt_decrypt
-#define _mcrypt_get_size xtea_LTX__mcrypt_get_size
-#define _mcrypt_get_block_size xtea_LTX__mcrypt_get_block_size
-#define _is_block_algorithm xtea_LTX__is_block_algorithm
-#define _mcrypt_get_key_size xtea_LTX__mcrypt_get_key_size
-#define _mcrypt_get_supported_key_sizes xtea_LTX__mcrypt_get_supported_key_sizes
-#define _mcrypt_get_algorithms_name xtea_LTX__mcrypt_get_algorithms_name
-#define _mcrypt_self_test xtea_LTX__mcrypt_self_test
-#define _mcrypt_algorithm_version xtea_LTX__mcrypt_algorithm_version
-
 #define ROUNDS 32
 #define DELTA 0x9e3779b9	/* sqr(5)-1 * 2^31 */
 
@@ -35,9 +23,10 @@
    Output values:	v[2]    64-bit ciphertext block 
  **********************************************************/
 
-WIN32DLL_DEFINE
-    int _mcrypt_set_key(word32 * k, word32 * input_key, int len)
+static int _mcrypt_set_key(void *ctx, const void *key, int len)
 {
+	word32 *k = ctx;
+	const word32 *input_key = key;
 	k[0] = 0;
 	k[2] = 0;
 	k[1] = 0;
@@ -46,8 +35,10 @@ WIN32DLL_DEFINE
 	return 0;
 }
 
-WIN32DLL_DEFINE void _mcrypt_encrypt(word32 * k, word32 * v)
+static void _mcrypt_encrypt(void *ctx, void *block)
 {
+	word32 *k = ctx;
+	word32 *v = block;
 #ifdef WORDS_BIGENDIAN
 	word32 y = v[0], z = v[1];
 #else
@@ -87,8 +78,10 @@ WIN32DLL_DEFINE void _mcrypt_encrypt(word32 * k, word32 * v)
 #endif
 }
 
-WIN32DLL_DEFINE void _mcrypt_decrypt(word32 * k, word32 * v)
+static void _mcrypt_decrypt(void *ctx, void *block)
 {
+	word32 *k = ctx;
+	word32 *v = block;
 #ifdef WORDS_BIGENDIAN
 	word32 y = v[0], z = v[1];
 #else
@@ -129,49 +122,53 @@ WIN32DLL_DEFINE void _mcrypt_decrypt(word32 * k, word32 * v)
 }
 
 /*
-void _mcrypt_encrypt(word32 * k, word32 * v)
+static void _mcrypt_encrypt(void *ctx, void *block)
 {
+	word32 *k = ctx;
+	word32 *v = block;
 	_mcrypt_tean(k, v, ROUNDS);
 }
 
-void _mcrypt_decrypt(word32 * k, word32 * v)
+static void _mcrypt_decrypt(void *ctx, void *block)
 {
+	word32 *k = ctx;
+	word32 *v = block;
 	_mcrypt_tean(k, v, -ROUNDS);
 }
 */
 
-WIN32DLL_DEFINE int _mcrypt_get_size()
+static int _mcrypt_get_size(void)
 {
 	return 4 * sizeof(word32);
 }
-WIN32DLL_DEFINE int _mcrypt_get_block_size()
+static int _mcrypt_get_block_size(void)
 {
 	return 8;
 }
-WIN32DLL_DEFINE int _is_block_algorithm()
+static int _is_block_algorithm(void)
 {
 	return 1;
 }
-WIN32DLL_DEFINE int _mcrypt_get_key_size()
+static int _mcrypt_get_key_size(void)
 {
 	return 16;
 }
 
 static const int key_sizes[] = { 16 };
-WIN32DLL_DEFINE const int *_mcrypt_get_supported_key_sizes(int *len)
+static const int *_mcrypt_get_supported_key_sizes(int *len)
 {
 	*len = sizeof(key_sizes)/sizeof(int);
 	return key_sizes;
 }
 
-WIN32DLL_DEFINE const char *_mcrypt_get_algorithms_name()
+static const char *_mcrypt_get_algorithms_name(void)
 {
 return "xTEA";
 }
 
 #define CIPHER "f61e7ff6da7cdb27"
 
-WIN32DLL_DEFINE int _mcrypt_self_test()
+static int _mcrypt_self_test(void)
 {
 	char *keyword;
 	unsigned char plaintext[16];
@@ -224,8 +221,22 @@ WIN32DLL_DEFINE int _mcrypt_self_test()
 	return 0;
 }
 
-WIN32DLL_DEFINE word32 _mcrypt_algorithm_version()
+static word32 _mcrypt_algorithm_version(void)
 {
 	return 20010801;
 }
 
+const mcrypt_algo_module mcrypt_algo_xtea = {
+	.name = "xtea",
+	.set_key = _mcrypt_set_key,
+	.encrypt = _mcrypt_encrypt,
+	.decrypt = _mcrypt_decrypt,
+	.get_size = _mcrypt_get_size,
+	.get_block_size = _mcrypt_get_block_size,
+	.is_block_algo = _is_block_algorithm,
+	.get_key_size = _mcrypt_get_key_size,
+	.get_supported_key_sizes = _mcrypt_get_supported_key_sizes,
+	.get_name = _mcrypt_get_algorithms_name,
+	.self_test = _mcrypt_self_test,
+	.get_version = _mcrypt_algorithm_version
+};

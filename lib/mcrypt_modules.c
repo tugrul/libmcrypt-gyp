@@ -29,9 +29,6 @@
 # define fputs(x, y) 
 #endif
 
-extern const mcrypt_mode_module mcrypt_mode_modules[9];
-extern const mcrypt_algo_module mcrypt_algo_modules[20];
-
 /* Module names compare equal when they differ only in '-' versus '_',
  * as in upstream ("rijndael_128" opens "rijndael-128"). */
 static int mcrypt_strcmp(const char* str1, const char* str2)
@@ -53,17 +50,15 @@ static int mcrypt_strcmp(const char* str1, const char* str2)
 
 const mcrypt_algo_module* mcrypt_module_get_algo(const char* name)
 {
-    int size = sizeof(mcrypt_algo_modules) / sizeof(mcrypt_algo_module) - 1;
-    const mcrypt_algo_module* module = NULL;
+    const mcrypt_algo_module *const *module;
 
     if (name == NULL) {
         return NULL;
     }
 
-    for (module = mcrypt_algo_modules; module < mcrypt_algo_modules + size; module++) {
-        if (module->name != NULL 
-            && (mcrypt_strcmp(module->name, name) == 0)) {
-            return module;
+    for (module = mcrypt_algo_modules; *module != NULL; module++) {
+        if (mcrypt_strcmp((*module)->name, name) == 0) {
+            return *module;
         }
     }
 
@@ -72,17 +67,15 @@ const mcrypt_algo_module* mcrypt_module_get_algo(const char* name)
 
 const mcrypt_mode_module* mcrypt_module_get_mode(const char* name)
 {
-    int size = sizeof(mcrypt_mode_modules) / sizeof(mcrypt_mode_module) - 1;
-    const mcrypt_mode_module* module = NULL;
+    const mcrypt_mode_module *const *module;
 
     if (name == NULL) {
         return NULL;
     }
 
-    for (module = mcrypt_mode_modules; module < mcrypt_mode_modules + size; module++) {
-        if (module->name != NULL 
-            && (mcrypt_strcmp(module->name, name) == 0)) {
-            return module;
+    for (module = mcrypt_mode_modules; *module != NULL; module++) {
+        if (mcrypt_strcmp((*module)->name, name) == 0) {
+            return *module;
         }
     }
 
@@ -154,22 +147,17 @@ int mcrypt_mode_get_size(MCRYPT td)
 WIN32DLL_DEFINE
 int mcrypt_set_key(MCRYPT td, void *a, const void *key, int keysize, const void *iv, int e)
 {
-	int (*__mcrypt_set_key_stream) (void *, const void *, int, const void *, int);
-	int (*__mcrypt_set_key_block) (void *, const void *, int);
-
 	if (mcrypt_enc_is_block_algorithm(td) == 0) {
 		/* stream */
-		__mcrypt_set_key_stream = td->algo->set_key;
-		if (__mcrypt_set_key_stream == NULL) {
+		if (td->algo->stream_set_key == NULL) {
 			return -2;
 		}
-		return __mcrypt_set_key_stream(a, key, keysize, iv, e);
+		return td->algo->stream_set_key(a, key, keysize, iv, e);
 	} else {
-		__mcrypt_set_key_block = td->algo->set_key;
-		if (__mcrypt_set_key_block == NULL) {
+		if (td->algo->set_key == NULL) {
 			return -2;
 		}
-		return __mcrypt_set_key_block(a, key, keysize);
+		return td->algo->set_key(a, key, keysize);
 	}
 }
 
@@ -306,8 +294,8 @@ WIN32DLL_DEFINE
 int mcrypt(MCRYPT td, void *buf, void *a, int b)
 {
     if (td->mode->encrypt != NULL) {
-        return td->mode->encrypt(buf, a, b, mcrypt_enc_get_block_size(td), td->akey,
-		       td->algo->encrypt, td->algo->decrypt);
+        return td->mode->encrypt(buf, a, b, mcrypt_enc_get_block_size(td),
+			 td->akey, td->algo);
     }
 
 	return MCRYPT_FAILED;
@@ -318,7 +306,7 @@ int mdecrypt(MCRYPT td, void *buf, void *a, int b)
 {
     if (td->mode->decrypt != NULL) {
         return td->mode->decrypt(buf, a, b, mcrypt_enc_get_block_size(td),
-			 td->akey, td->algo->encrypt, td->algo->decrypt);
+			 td->akey, td->algo);
     }
 
 	return MCRYPT_FAILED;

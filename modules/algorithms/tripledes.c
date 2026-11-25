@@ -22,18 +22,6 @@
 #include <mcrypt_modules.h>
 #include "tripledes.h"
 
-#define _mcrypt_set_key tripledes_LTX__mcrypt_set_key
-#define _mcrypt_encrypt tripledes_LTX__mcrypt_encrypt
-#define _mcrypt_decrypt tripledes_LTX__mcrypt_decrypt
-#define _mcrypt_get_size tripledes_LTX__mcrypt_get_size
-#define _mcrypt_get_block_size tripledes_LTX__mcrypt_get_block_size
-#define _is_block_algorithm tripledes_LTX__is_block_algorithm
-#define _mcrypt_get_key_size tripledes_LTX__mcrypt_get_key_size
-#define _mcrypt_get_supported_key_sizes tripledes_LTX__mcrypt_get_supported_key_sizes
-#define _mcrypt_get_algorithms_name tripledes_LTX__mcrypt_get_algorithms_name
-#define _mcrypt_self_test tripledes_LTX__mcrypt_self_test
-#define _mcrypt_algorithm_version tripledes_LTX__mcrypt_algorithm_version
-
 /* #define	NULL	0 */
 
 static void permute(), perminit(), spinit();
@@ -208,16 +196,17 @@ static int _mcrypt_desinit(TRIPLEDES_KEY * key)
 
 
 /* Set key (initialize key schedule array) */
-WIN32DLL_DEFINE
-    int _mcrypt_set_key(TRIPLEDES_KEY * dkey, char *user_key, int len)
+static int _mcrypt_set_key(void *ctx, const void *key_data, int len)
 {
+	TRIPLEDES_KEY *dkey = ctx;
+	const char *user_key = key_data;
 	char pc1m[56];		/* place to modify pc1 into */
 	char pcr[56];		/* place to rotate pc1 into */
 	register int i, j, l;
 	int m;
-	char *user_key1 = &user_key[0];
-	char *user_key2 = &user_key[8];
-	char *user_key3 = &user_key[16];
+	const char *user_key1 = &user_key[0];
+	const char *user_key2 = &user_key[8];
+	const char *user_key3 = &user_key[16];
 
 	_mcrypt_desinit(dkey);
 
@@ -306,8 +295,10 @@ WIN32DLL_DEFINE
 
 /* In-place encryption of 64-bit block */
 
-WIN32DLL_DEFINE void _mcrypt_encrypt(TRIPLEDES_KEY * key, char *block)
+static void _mcrypt_encrypt(void *ctx, void *buf)
 {
+	TRIPLEDES_KEY *key = ctx;
+	char *block = buf;
 	register word32 left, right;
 	register char *knp;
 	word32 work[2];		/* Working data storage */
@@ -454,8 +445,10 @@ WIN32DLL_DEFINE void _mcrypt_encrypt(TRIPLEDES_KEY * key, char *block)
  * image of encryption; exactly the same steps are taken, but in
  * reverse order
  */
-WIN32DLL_DEFINE void _mcrypt_decrypt(TRIPLEDES_KEY * key, char *block)
+static void _mcrypt_decrypt(void *ctx, void *buf)
 {
+	TRIPLEDES_KEY *key = ctx;
+	char *block = buf;
 	register word32 left, right;
 	register char *knp;
 	word32 work[2];		/* Working data storage */
@@ -751,38 +744,38 @@ static void spinit(TRIPLEDES_KEY * key, int pos)
 	}
 }
 
-WIN32DLL_DEFINE int _mcrypt_get_size()
+static int _mcrypt_get_size(void)
 {
 	return sizeof(TRIPLEDES_KEY);
 }
-WIN32DLL_DEFINE int _mcrypt_get_block_size()
+static int _mcrypt_get_block_size(void)
 {
 	return 8;
 }
-WIN32DLL_DEFINE int _is_block_algorithm()
+static int _is_block_algorithm(void)
 {
 	return 1;
 }
-WIN32DLL_DEFINE int _mcrypt_get_key_size()
+static int _mcrypt_get_key_size(void)
 {
 	return 24;
 }
 
 static const int key_sizes[] = { 24 };
-WIN32DLL_DEFINE const int *_mcrypt_get_supported_key_sizes(int *len)
+static const int *_mcrypt_get_supported_key_sizes(int *len)
 {
 	*len = sizeof(key_sizes)/sizeof(int);
 	return key_sizes;
 
 }
-WIN32DLL_DEFINE const char *_mcrypt_get_algorithms_name()
+static const char *_mcrypt_get_algorithms_name(void)
 {
 	return "3DES";
 }
 
 #define CIPHER "58ed248f77f6b19e"
 
-WIN32DLL_DEFINE int _mcrypt_self_test()
+static int _mcrypt_self_test(void)
 {
 	char *keyword;
 	unsigned char plaintext[16];
@@ -844,8 +837,22 @@ WIN32DLL_DEFINE int _mcrypt_self_test()
 	return 0;
 }
 
-WIN32DLL_DEFINE word32 _mcrypt_algorithm_version()
+static word32 _mcrypt_algorithm_version(void)
 {
 	return 19991129;
 }
 
+const mcrypt_algo_module mcrypt_algo_tripledes = {
+	.name = "tripledes",
+	.set_key = _mcrypt_set_key,
+	.encrypt = _mcrypt_encrypt,
+	.decrypt = _mcrypt_decrypt,
+	.get_size = _mcrypt_get_size,
+	.get_block_size = _mcrypt_get_block_size,
+	.is_block_algo = _is_block_algorithm,
+	.get_key_size = _mcrypt_get_key_size,
+	.get_supported_key_sizes = _mcrypt_get_supported_key_sizes,
+	.get_name = _mcrypt_get_algorithms_name,
+	.self_test = _mcrypt_self_test,
+	.get_version = _mcrypt_algorithm_version
+};

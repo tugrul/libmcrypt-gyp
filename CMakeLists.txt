@@ -68,7 +68,7 @@ set(LIBMCRYPT_SOURCES
     lib/mcrypt.c
     lib/mcrypt_extra.c
     lib/mcrypt_modules.c
-    lib/mcrypt_symb.c
+    lib/mcrypt_registry.c
     lib/xmemory.c
 )
 

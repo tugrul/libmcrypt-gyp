@@ -20,33 +20,22 @@
 #include <libdefs.h>
 #include <mcrypt_modules.h>
 
-#define _init_mcrypt stream_LTX__init_mcrypt
-#define _mcrypt_set_state stream_LTX__mcrypt_set_state
-#define _mcrypt_get_state stream_LTX__mcrypt_get_state
-#define _end_mcrypt stream_LTX__end_mcrypt
-#define _mcrypt stream_LTX__mcrypt
-#define _mdecrypt stream_LTX__mdecrypt
-#define _has_iv stream_LTX__has_iv
-#define _is_block_mode stream_LTX__is_block_mode
-#define _is_block_algorithm_mode stream_LTX__is_block_algorithm_mode
-#define _mcrypt_get_modes_name stream_LTX__mcrypt_get_modes_name
-#define _mcrypt_mode_get_size stream_LTX__mcrypt_mode_get_size
-#define _mcrypt_mode_version stream_LTX__mcrypt_mode_version
-
 /* STREAM MODE */
 
-int _init_mcrypt( void* ign, void *key, int lenofkey, void *IV, int size) { return 0; }
+static int _init_mcrypt(void *ign, const void *key, int lenofkey,
+                        const void *IV, int size) { return 0; }
 
-int _mcrypt_set_state( void* buf, void *IV, int size) { return -1; }
-int _mcrypt_get_state( void* buf, void *IV, int *size) { return -1; }
+static int _mcrypt_set_state(void *buf, const void *IV, int size) { return -1; }
+static int _mcrypt_get_state(void *buf, void *IV, int *size) { return -1; }
 
-int _end_mcrypt(void* ign) {return 0;}
+static int _end_mcrypt(void *ign) {return 0;}
 
-int _mcrypt( void* ign, void *plaintext, int len, int blocksize, void* akey, void (*func)(void*,void*, int), void (*func2)(void*,void*, int))
+static int _mcrypt(void *ign, void *plaintext, int len, int blocksize,
+                   void *akey, const mcrypt_algo_module *algo)
 {
 	void (*_mcrypt_stream_encrypt) (void *, void *, int);
 
-	_mcrypt_stream_encrypt = func;
+	_mcrypt_stream_encrypt = algo->stream_encrypt;
 
 	_mcrypt_stream_encrypt(akey, plaintext, len);
 	return 0;
@@ -54,23 +43,39 @@ int _mcrypt( void* ign, void *plaintext, int len, int blocksize, void* akey, voi
 
 
 
-int _mdecrypt( void* ign, void *ciphertext, int len, int blocksize, void* akey, void (*func)(void*,void*, int), void (*func2)(void*,void*, int))
+static int _mdecrypt(void *ign, void *ciphertext, int len, int blocksize,
+                     void *akey, const mcrypt_algo_module *algo)
 {
 	void (*_mcrypt_stream_decrypt) (void *, void *, int);
 
-	_mcrypt_stream_decrypt = func2;
+	_mcrypt_stream_decrypt = algo->stream_decrypt;
 
 	_mcrypt_stream_decrypt(akey, ciphertext, len);
 	return 0;
 }
 
-int _has_iv() { return 1; }
-int _is_block_mode() { return 0; }
-int _is_block_algorithm_mode() { return 0; }
-const char *_mcrypt_get_modes_name() { return "STREAM";}
-int _mcrypt_mode_get_size () {return 0;}
+static int _has_iv(void) { return 1; }
+static int _is_block_mode(void) { return 0; }
+static int _is_block_algorithm_mode(void) { return 0; }
+static const char *_mcrypt_get_modes_name(void) { return "STREAM";}
+static int _mcrypt_mode_get_size(void) {return 0;}
 
-word32 _mcrypt_mode_version() {
+static word32 _mcrypt_mode_version(void) {
 	return 20010801;
 }
 
+const mcrypt_mode_module mcrypt_mode_stream = {
+	.name = "stream",
+	.init = _init_mcrypt,
+	.set_state = _mcrypt_set_state,
+	.get_state = _mcrypt_get_state,
+	.end = _end_mcrypt,
+	.encrypt = _mcrypt,
+	.decrypt = _mdecrypt,
+	.has_iv = _has_iv,
+	.is_block_mode = _is_block_mode,
+	.is_block_algo_mode = _is_block_algorithm_mode,
+	.get_name = _mcrypt_get_modes_name,
+	.get_size = _mcrypt_mode_get_size,
+	.get_version = _mcrypt_mode_version
+};

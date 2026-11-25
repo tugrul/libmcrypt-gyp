@@ -20,19 +20,6 @@
 #include <mcrypt_modules.h>
 #include "enigma.h"
 
-#define _mcrypt_set_key enigma_LTX__mcrypt_set_key
-#define _mcrypt_encrypt enigma_LTX__mcrypt_encrypt
-#define _mcrypt_decrypt enigma_LTX__mcrypt_decrypt
-#define _mcrypt_get_size enigma_LTX__mcrypt_get_size
-#define _mcrypt_get_block_size enigma_LTX__mcrypt_get_block_size
-#define _is_block_algorithm enigma_LTX__is_block_algorithm
-#define _mcrypt_get_key_size enigma_LTX__mcrypt_get_key_size
-#define _mcrypt_get_algo_iv_size enigma_LTX__mcrypt_get_algo_iv_size
-#define _mcrypt_get_supported_key_sizes enigma_LTX__mcrypt_get_supported_key_sizes
-#define _mcrypt_get_algorithms_name enigma_LTX__mcrypt_get_algorithms_name
-#define _mcrypt_self_test enigma_LTX__mcrypt_self_test
-#define _mcrypt_algorithm_version enigma_LTX__mcrypt_algorithm_version
-
 /* it needs to be linked against libufc or libcrypt */
 /* it no longer needs that. It just needs the password to be
  * transformed by unix crypt() or the mhash SCRYPT 
@@ -43,10 +30,11 @@
  * and convert back. The values are the same as with wrapping signed ints. */
 #define MUL_ADD(a, b, c) ((sword32) ((word32) (a) * (word32) (b) + (word32) (c)))
 
-WIN32DLL_DEFINE
-    int _mcrypt_set_key(CRYPT_KEY * ckey, char *password, int plen,
-			void *u1, int u2)
+static int _mcrypt_set_key(void *ctx, const void *key, int plen,
+                           const void *u1, int u2)
 {
+	CRYPT_KEY *ckey = ctx;
+	const char *password = key;
 	int ic, i, k, temp;
 	unsigned random;
 	sword32 seed;
@@ -112,9 +100,9 @@ int shuffle(CRYPT_KEY * ckey)
 	return 0;
 }
 
-WIN32DLL_DEFINE
-    void _mcrypt_encrypt(CRYPT_KEY * ckey, void *gtext, int textlen)
+static void _mcrypt_encrypt(void *ctx, void *gtext, int textlen)
 {				/* 0 or 1 */
+	CRYPT_KEY *ckey = ctx;
 	int i, j;
 	int secureflg = 0;
 	char *text = gtext;
@@ -151,9 +139,9 @@ WIN32DLL_DEFINE
 	return;
 }
 
-WIN32DLL_DEFINE
-    void _mcrypt_decrypt(CRYPT_KEY * ckey, void *gtext, int textlen)
+static void _mcrypt_decrypt(void *ctx, void *gtext, int textlen)
 {				/* 0 or 1 */
+	CRYPT_KEY *ckey = ctx;
 	int i, j;
 	int secureflg = 0;
 	char *text = gtext;
@@ -192,40 +180,40 @@ WIN32DLL_DEFINE
 }
 
 
-WIN32DLL_DEFINE int _mcrypt_get_size()
+static int _mcrypt_get_size(void)
 {
 	return sizeof(CRYPT_KEY);
 }
-WIN32DLL_DEFINE int _mcrypt_get_block_size()
+static int _mcrypt_get_block_size(void)
 {
 	return 1;
 }
-WIN32DLL_DEFINE int _mcrypt_get_algo_iv_size()
+static int _mcrypt_get_algo_iv_size(void)
 {
 	return 0;
 }
-WIN32DLL_DEFINE int _is_block_algorithm()
+static int _is_block_algorithm(void)
 {
 	return 0;
 }
-WIN32DLL_DEFINE int _mcrypt_get_key_size()
+static int _mcrypt_get_key_size(void)
 {
 	return 13;
 }
-WIN32DLL_DEFINE const int *_mcrypt_get_supported_key_sizes(int *len)
+static const int *_mcrypt_get_supported_key_sizes(int *len)
 {
 	*len = 0;
 	return NULL;
 }
 
-WIN32DLL_DEFINE char *_mcrypt_get_algorithms_name()
+static const char *_mcrypt_get_algorithms_name(void)
 {
 return "enigma";
 }
 
 #define CIPHER "f3edda7da20f8975884600f014d32c7a08e59d7b"
 
-WIN32DLL_DEFINE int _mcrypt_self_test()
+static int _mcrypt_self_test(void)
 {
 	char *keyword;
 	unsigned char plaintext[20];
@@ -283,7 +271,23 @@ WIN32DLL_DEFINE int _mcrypt_self_test()
 	return 0;
 }
 
-WIN32DLL_DEFINE word32 _mcrypt_algorithm_version()
+static word32 _mcrypt_algorithm_version(void)
 {
 	return 20010801;
 }
+
+const mcrypt_algo_module mcrypt_algo_enigma = {
+	.name = "enigma",
+	.stream_set_key = _mcrypt_set_key,
+	.stream_encrypt = _mcrypt_encrypt,
+	.stream_decrypt = _mcrypt_decrypt,
+	.get_size = _mcrypt_get_size,
+	.get_block_size = _mcrypt_get_block_size,
+	.is_block_algo = _is_block_algorithm,
+	.get_key_size = _mcrypt_get_key_size,
+	.get_algo_iv_size = _mcrypt_get_algo_iv_size,
+	.get_supported_key_sizes = _mcrypt_get_supported_key_sizes,
+	.get_name = _mcrypt_get_algorithms_name,
+	.self_test = _mcrypt_self_test,
+	.get_version = _mcrypt_algorithm_version
+};

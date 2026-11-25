@@ -1,3 +1,5 @@
+#include "mcrypt_registry.h"
+
 /* The count is reduced modulo 32, so a count of 0 or of 32 and more is
  * defined behaviour. CAST-256 passes counts up to 2^32-1 and relies on that. */
 #define rotl32(x,n)   (((x) << ((word32)(n) & 31)) | ((x) >> ((32 - ((word32)(n) & 31)) & 31)))

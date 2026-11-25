@@ -25,9 +25,6 @@
 #include <mcrypt_internal.h>
 
 
-extern const mcrypt_mode_module mcrypt_mode_modules[9];
-extern const mcrypt_algo_module mcrypt_algo_modules[20];
-
 /* ok */
 WIN32DLL_DEFINE
 char **mcrypt_list_algorithms(int *size)
@@ -35,7 +32,11 @@ char **mcrypt_list_algorithms(int *size)
 	char **algos = NULL;
 	int i = 0;
 
-	*size = sizeof(mcrypt_algo_modules) / sizeof(mcrypt_algo_module) - 1;
+	*size = 0;
+	while (mcrypt_algo_modules[*size] != NULL) {
+		(*size)++;
+	}
+
     algos = malloc(sizeof(char*) * (*size));
 
     if (algos == NULL) {
@@ -43,7 +44,7 @@ char **mcrypt_list_algorithms(int *size)
     }
 
     for (i = 0; i < *size; i++) {
-        algos[i] = strdup(mcrypt_algo_modules[i].name);
+        algos[i] = strdup(mcrypt_algo_modules[i]->name);
     }
 
     return algos;
@@ -56,7 +57,11 @@ char **mcrypt_list_modes(int *size)
 	char **modes = NULL;
 	int i = 0;
 
-	*size = sizeof(mcrypt_mode_modules) / sizeof(mcrypt_mode_module) - 1;
+	*size = 0;
+	while (mcrypt_mode_modules[*size] != NULL) {
+		(*size)++;
+	}
+
     modes = malloc(sizeof(char*) * (*size));
 
     if (modes == NULL) {
@@ -64,7 +69,7 @@ char **mcrypt_list_modes(int *size)
     }
 
     for (i = 0; i < *size; i++) {
-        modes[i] = strdup(mcrypt_mode_modules[i].name);
+        modes[i] = strdup(mcrypt_mode_modules[i]->name);
     }
 
     return modes;

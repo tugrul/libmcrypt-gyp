@@ -44,18 +44,6 @@ Mean:          941 cycles =    27.2 mbits/sec
 #include <mcrypt_modules.h>
 #include "serpent.h"
 
-#define _mcrypt_set_key serpent_LTX__mcrypt_set_key
-#define _mcrypt_encrypt serpent_LTX__mcrypt_encrypt
-#define _mcrypt_decrypt serpent_LTX__mcrypt_decrypt
-#define _mcrypt_get_size serpent_LTX__mcrypt_get_size
-#define _mcrypt_get_block_size serpent_LTX__mcrypt_get_block_size
-#define _is_block_algorithm serpent_LTX__is_block_algorithm
-#define _mcrypt_get_key_size serpent_LTX__mcrypt_get_key_size
-#define _mcrypt_get_supported_key_sizes serpent_LTX__mcrypt_get_supported_key_sizes
-#define _mcrypt_get_algorithms_name serpent_LTX__mcrypt_get_algorithms_name
-#define _mcrypt_self_test serpent_LTX__mcrypt_self_test
-#define _mcrypt_algorithm_version serpent_LTX__mcrypt_algorithm_version
-
 /* Partially optimised Serpent S Box boolean functions derived  */
 /* using a recursive descent analyser but without a full search */
 /* of all subtrees. This set of S boxes is the result of work   */
@@ -457,10 +445,11 @@ Mean:          941 cycles =    27.2 mbits/sec
 
 /* initialise the key schedule from the user supplied key   */
 
-WIN32DLL_DEFINE
-    int _mcrypt_set_key(SERPENT_KEY * spkey, const word32 * in_key,
-			word32 key_len)
+static int _mcrypt_set_key(void *ctx, const void *key, int len)
 {
+	SERPENT_KEY *spkey = ctx;
+	const word32 *in_key = key;
+	word32 key_len = (word32) len;
 	word32 i, lk, a, b, c, d, e, f, g, h;
 	word32 t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14,
 	    t15, t16;
@@ -606,8 +595,10 @@ WIN32DLL_DEFINE
 
 /* encrypt a block of text  */
 
-WIN32DLL_DEFINE void _mcrypt_encrypt(SERPENT_KEY * spkey, word32 * in_blk)
+static void _mcrypt_encrypt(void *ctx, void *block)
 {
+	SERPENT_KEY *spkey = ctx;
+	word32 *in_blk = block;
 	word32 a, b, c, d, e, f, g, h;
 	word32 t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14,
 	    t15, t16;
@@ -736,8 +727,10 @@ WIN32DLL_DEFINE void _mcrypt_encrypt(SERPENT_KEY * spkey, word32 * in_blk)
 
 /* decrypt a block of text  */
 
-WIN32DLL_DEFINE void _mcrypt_decrypt(SERPENT_KEY * spkey, word32 * in_blk)
+static void _mcrypt_decrypt(void *ctx, void *block)
 {
+	SERPENT_KEY *spkey = ctx;
+	word32 *in_blk = block;
 	word32 a, b, c, d, e, f, g, h;
 	word32 t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14,
 	    t15, t16;
@@ -865,39 +858,39 @@ WIN32DLL_DEFINE void _mcrypt_decrypt(SERPENT_KEY * spkey, word32 * in_blk)
 }
 
 
-WIN32DLL_DEFINE int _mcrypt_get_size()
+static int _mcrypt_get_size(void)
 {
 	return sizeof(SERPENT_KEY);
 }
 
-WIN32DLL_DEFINE int _mcrypt_get_block_size()
+static int _mcrypt_get_block_size(void)
 {
 	return 16;
 }
-WIN32DLL_DEFINE int _is_block_algorithm()
+static int _is_block_algorithm(void)
 {
 	return 1;
 }
-WIN32DLL_DEFINE int _mcrypt_get_key_size()
+static int _mcrypt_get_key_size(void)
 {
 	return 32;
 }
 
 static const int key_sizes[] = { 16, 24, 32 };
-WIN32DLL_DEFINE const int *_mcrypt_get_supported_key_sizes(int *len)
+static const int *_mcrypt_get_supported_key_sizes(int *len)
 {
 	*len = sizeof(key_sizes)/sizeof(int);
 	return key_sizes;
 
 }
-WIN32DLL_DEFINE const char *_mcrypt_get_algorithms_name()
+static const char *_mcrypt_get_algorithms_name(void)
 {
 return "Serpent";
 }
 
 #define CIPHER "9a99455df5080bfccadf049b5aaf7d61"
 
-WIN32DLL_DEFINE int _mcrypt_self_test()
+static int _mcrypt_self_test(void)
 {
 	char *keyword;
 	unsigned char plaintext[16];
@@ -952,8 +945,22 @@ WIN32DLL_DEFINE int _mcrypt_self_test()
 	return 0;
 }
 
-WIN32DLL_DEFINE word32 _mcrypt_algorithm_version()
+static word32 _mcrypt_algorithm_version(void)
 {
 	return 20010801;
 }
 
+const mcrypt_algo_module mcrypt_algo_serpent = {
+	.name = "serpent",
+	.set_key = _mcrypt_set_key,
+	.encrypt = _mcrypt_encrypt,
+	.decrypt = _mcrypt_decrypt,
+	.get_size = _mcrypt_get_size,
+	.get_block_size = _mcrypt_get_block_size,
+	.is_block_algo = _is_block_algorithm,
+	.get_key_size = _mcrypt_get_key_size,
+	.get_supported_key_sizes = _mcrypt_get_supported_key_sizes,
+	.get_name = _mcrypt_get_algorithms_name,
+	.self_test = _mcrypt_self_test,
+	.get_version = _mcrypt_algorithm_version
+};

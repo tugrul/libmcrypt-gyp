@@ -21,18 +21,6 @@
 /* #include <assert.h> */
 #include "rc2.h"
 
-#define _mcrypt_set_key rc2_LTX__mcrypt_set_key
-#define _mcrypt_encrypt rc2_LTX__mcrypt_encrypt
-#define _mcrypt_decrypt rc2_LTX__mcrypt_decrypt
-#define _mcrypt_get_size rc2_LTX__mcrypt_get_size
-#define _mcrypt_get_block_size rc2_LTX__mcrypt_get_block_size
-#define _is_block_algorithm rc2_LTX__is_block_algorithm
-#define _mcrypt_get_key_size rc2_LTX__mcrypt_get_key_size
-#define _mcrypt_get_supported_key_sizes rc2_LTX__mcrypt_get_supported_key_sizes
-#define _mcrypt_get_algorithms_name rc2_LTX__mcrypt_get_algorithms_name
-#define _mcrypt_self_test rc2_LTX__mcrypt_self_test
-#define _mcrypt_algorithm_version rc2_LTX__mcrypt_algorithm_version
-
 /**********************************************************************\
 * Expand a variable-length user key (between 1 and 128 bytes) to a     *
 * 64-short working rc2 key, of at most "bits" effective key bits.      *
@@ -41,9 +29,11 @@
 * zero is accepted as an alias for 1024.                               *
 \**********************************************************************/
 
-WIN32DLL_DEFINE
-    int _mcrypt_set_key(word16 * xkey, const byte * key, unsigned int len)
+static int _mcrypt_set_key(void *ctx, const void *user_key, int key_len)
 {
+	word16 *xkey = ctx;
+	const byte *key = user_key;
+	unsigned int len = (unsigned int) key_len;
 	unsigned int j;
 	byte *xkey_p = (void *) xkey;
 	int i;
@@ -114,8 +104,10 @@ WIN32DLL_DEFINE
 * Encrypt an 8-byte block of plaintext using the given key.            *
 \**********************************************************************/
 
-WIN32DLL_DEFINE void _mcrypt_encrypt(const word16 * xkey, word16 * plain)
+static void _mcrypt_encrypt(void *ctx, void *block)
 {
+	const word16 *xkey = ctx;
+	word16 *plain = block;
 	word16 x3, x2, x1, x0, i;
 
 #ifdef WORDS_BIGENDIAN
@@ -170,8 +162,10 @@ WIN32DLL_DEFINE void _mcrypt_encrypt(const word16 * xkey, word16 * plain)
 * Decrypt an 8-byte block of ciphertext using the given key.           *
 \**********************************************************************/
 
-WIN32DLL_DEFINE void _mcrypt_decrypt(const word16 * xkey, word16 * plain)
+static void _mcrypt_decrypt(void *ctx, void *block)
 {
+	const word16 *xkey = ctx;
+	word16 *plain = block;
 	word16 x3, x2, x1, x0, i;
 
 #ifndef WORDS_BIGENDIAN
@@ -222,36 +216,36 @@ WIN32DLL_DEFINE void _mcrypt_decrypt(const word16 * xkey, word16 * plain)
 #endif
 }
 
-WIN32DLL_DEFINE int _mcrypt_get_size()
+static int _mcrypt_get_size(void)
 {
 	return 64 * sizeof(word16);
 }
-WIN32DLL_DEFINE int _mcrypt_get_block_size()
+static int _mcrypt_get_block_size(void)
 {
 	return 8;
 }
-WIN32DLL_DEFINE int _is_block_algorithm()
+static int _is_block_algorithm(void)
 {
 	return 1;
 }
-WIN32DLL_DEFINE int _mcrypt_get_key_size()
+static int _mcrypt_get_key_size(void)
 {
 	return 128;
 }
 
-WIN32DLL_DEFINE const int *_mcrypt_get_supported_key_sizes(int *len)
+static const int *_mcrypt_get_supported_key_sizes(int *len)
 {
 	*len = 0;
 	return NULL;
 }
-WIN32DLL_DEFINE char *_mcrypt_get_algorithms_name()
+static const char *_mcrypt_get_algorithms_name(void)
 {
 return "RC2";
 }
 
 #define CIPHER "becbe4c8e6237a14"
 
-WIN32DLL_DEFINE int _mcrypt_self_test()
+static int _mcrypt_self_test(void)
 {
 	char *keyword;
 	unsigned char plaintext[16];
@@ -308,8 +302,22 @@ WIN32DLL_DEFINE int _mcrypt_self_test()
 	return 0;
 }
 
-WIN32DLL_DEFINE word32 _mcrypt_algorithm_version()
+static word32 _mcrypt_algorithm_version(void)
 {
 	return 20010801;
 }
 
+const mcrypt_algo_module mcrypt_algo_rc2 = {
+	.name = "rc2",
+	.set_key = _mcrypt_set_key,
+	.encrypt = _mcrypt_encrypt,
+	.decrypt = _mcrypt_decrypt,
+	.get_size = _mcrypt_get_size,
+	.get_block_size = _mcrypt_get_block_size,
+	.is_block_algo = _is_block_algorithm,
+	.get_key_size = _mcrypt_get_key_size,
+	.get_supported_key_sizes = _mcrypt_get_supported_key_sizes,
+	.get_name = _mcrypt_get_algorithms_name,
+	.self_test = _mcrypt_self_test,
+	.get_version = _mcrypt_algorithm_version
+};

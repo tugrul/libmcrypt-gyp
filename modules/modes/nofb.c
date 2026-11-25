@@ -20,19 +20,6 @@
 #include <libdefs.h>
 #include <mcrypt_modules.h>
 
-#define _init_mcrypt nofb_LTX__init_mcrypt
-#define _mcrypt_set_state nofb_LTX__mcrypt_set_state
-#define _mcrypt_get_state nofb_LTX__mcrypt_get_state
-#define _end_mcrypt nofb_LTX__end_mcrypt
-#define _mcrypt nofb_LTX__mcrypt
-#define _mdecrypt nofb_LTX__mdecrypt
-#define _has_iv nofb_LTX__has_iv
-#define _is_block_mode nofb_LTX__is_block_mode
-#define _is_block_algorithm_mode nofb_LTX__is_block_algorithm_mode
-#define _mcrypt_get_modes_name nofb_LTX__mcrypt_get_modes_name
-#define _mcrypt_mode_get_size nofb_LTX__mcrypt_mode_get_size
-#define _mcrypt_mode_version nofb_LTX__mcrypt_mode_version
-
 typedef struct ncfb_buf {
 	byte*   enc_s_register;
 	byte* s_register;
@@ -42,8 +29,10 @@ typedef struct ncfb_buf {
 
 /* nOFB MODE */
 
-int _init_mcrypt( nOFB_BUFFER* buf, void *key, int lenofkey, void *IV, int size)
+static int _init_mcrypt(void *abuf, const void *key, int lenofkey,
+                        const void *IV, int size)
 {
+	nOFB_BUFFER *buf = abuf;
     buf->enc_s_register = buf->s_register = NULL;
     buf->s_register_pos = 0;
 
@@ -72,8 +61,10 @@ int _init_mcrypt( nOFB_BUFFER* buf, void *key, int lenofkey, void *IV, int size)
 		return -1;
 }
 
-int _mcrypt_set_state( nOFB_BUFFER* buf, byte *IV, int size)
+static int _mcrypt_set_state(void *abuf, const void *iv, int size)
 {
+	nOFB_BUFFER *buf = abuf;
+	const byte *IV = iv;
 	buf->s_register_pos = IV[0];
 	memcpy(buf->enc_s_register, &IV[1], size-1);
 	memcpy(buf->s_register, &IV[1], size-1);
@@ -81,8 +72,10 @@ int _mcrypt_set_state( nOFB_BUFFER* buf, byte *IV, int size)
 	return 0;
 }
 
-int _mcrypt_get_state( nOFB_BUFFER* buf, byte *IV, int *size)
+static int _mcrypt_get_state(void *abuf, void *iv, int *size)
 {
+	nOFB_BUFFER *buf = abuf;
+	byte *IV = iv;
 	if (*size < buf->blocksize + 1) {
 		*size = buf->blocksize + 1;
 		return -1;
@@ -96,9 +89,11 @@ int _mcrypt_get_state( nOFB_BUFFER* buf, byte *IV, int *size)
 }
 
 
-void _end_mcrypt( nOFB_BUFFER* buf) {
+static int _end_mcrypt(void *abuf) {
+	nOFB_BUFFER *buf = abuf;
 	free(buf->s_register);
 	free(buf->enc_s_register);
+	return 0;
 }
 
 inline static
@@ -178,41 +173,60 @@ void xor_stuff( nOFB_BUFFER *buf, void* akey, void (*func)(void*,void*), byte* p
 }
 
 
-int _mcrypt( nOFB_BUFFER* buf,void *plaintext, int len, int blocksize, void* akey, void (*func)(void*,void*), void (*func2)(void*,void*))
+static int _mcrypt(void *abuf, void *plaintext, int len, int blocksize,
+                   void *akey, const mcrypt_algo_module *algo)
 {				/* plaintext is n*blocksize bytes (nbit cfb) */
+	nOFB_BUFFER *buf = abuf;
 	byte* plain;
 	int j=0;
 	int modlen;
 
 	plain = plaintext;
 	for (j = 0; j < len / blocksize; j++) {
-		xor_stuff( buf, akey, func, plain, blocksize, blocksize); 
+		xor_stuff( buf, akey, algo->encrypt, plain, blocksize, blocksize); 
 		
 		plain += blocksize;
 
 	}
 	modlen = len % blocksize;
 	if (modlen > 0) {
-		xor_stuff( buf, akey, func, plain, blocksize, modlen); 
+		xor_stuff( buf, akey, algo->encrypt, plain, blocksize, modlen); 
 	}
 	
 	return 0;
 }
 
 
-int _mdecrypt( nOFB_BUFFER* buf,void *plaintext, int len, int blocksize, void* akey, void (*func)(void*,void*), void (*func2)(void*,void*))
+static int _mdecrypt(void *abuf, void *plaintext, int len, int blocksize,
+                     void *akey, const mcrypt_algo_module *algo)
 {				/* plaintext is n*blocksize bytes (nbit cfb) */
-	return _mcrypt( buf, plaintext, len, blocksize, akey, func, func2);
+	nOFB_BUFFER *buf = abuf;
+	return _mcrypt( buf, plaintext, len, blocksize, akey, algo);
 }
 
-int _has_iv() { return 1; }
-int _is_block_mode() { return 0; }
-int _is_block_algorithm_mode() { return 1; }
-char *_mcrypt_get_modes_name() { return "nOFB";}
-int _mcrypt_mode_get_size () {return sizeof(nOFB_BUFFER);}
+static int _has_iv(void) { return 1; }
+static int _is_block_mode(void) { return 0; }
+static int _is_block_algorithm_mode(void) { return 1; }
+static const char *_mcrypt_get_modes_name(void) { return "nOFB";}
+static int _mcrypt_mode_get_size(void) {return sizeof(nOFB_BUFFER);}
 
 
-word32 _mcrypt_mode_version() {
+static word32 _mcrypt_mode_version(void) {
 	return 20020307;
 }
 
+const mcrypt_mode_module mcrypt_mode_nofb = {
+	.name = "nofb",
+	.init = _init_mcrypt,
+	.set_state = _mcrypt_set_state,
+	.get_state = _mcrypt_get_state,
+	.end = _end_mcrypt,
+	.encrypt = _mcrypt,
+	.decrypt = _mdecrypt,
+	.has_iv = _has_iv,
+	.is_block_mode = _is_block_mode,
+	.is_block_algo_mode = _is_block_algorithm_mode,
+	.get_name = _mcrypt_get_modes_name,
+	.get_size = _mcrypt_mode_get_size,
+	.get_version = _mcrypt_mode_version
+};

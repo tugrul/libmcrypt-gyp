@@ -5,37 +5,7 @@
 
 /* Local Defines */
 
-typedef struct {
-    char* name;
-    int (*init) (void *, const void *, int, const void *, int);
-    int (*set_state) (void *, const void *, int);
-    int (*get_state) (void *, void *, int*);
-    int (*end) (void *);
-    int (*encrypt) (void *, void *, int, int, void *, void *, void*);
-    int (*decrypt) (void *, void *, int, int, void *, void *, void*);
-    int (*has_iv) (void);
-    int (*is_block_mode) (void);
-    int (*is_block_algo_mode) (void);
-    char *(*get_name) (void);
-    int (*get_size) (void);
-    word32 (*get_version) (void);
-} mcrypt_mode_module;
-
-typedef struct {
-    char* name;
-    void* set_key;
-    void* encrypt;
-    void* decrypt;
-    int (*get_size) (void);
-    int (*get_block_size) (void);
-    int (*is_block_algo) (void);
-    int (*get_key_size) (void);
-    int (*get_algo_iv_size) (void);
-    const int *(*get_supported_key_sizes) (int *);
-    const char *(*get_name) (void);
-    int (*self_test) (void);
-    word32 (*get_version) (void);
-} mcrypt_algo_module;
+#include <mcrypt_registry.h>
 
 typedef struct {
 	const mcrypt_algo_module* algo;
