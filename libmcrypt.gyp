@@ -12,6 +12,14 @@
                 'lib/',
                 'include/'
             ],
+            # The sources are pre-C99 style C (K&R declarations). Compilers that
+            # default to C23 (GCC 15 and later) reject them, so pin the dialect.
+            'cflags_c': [
+                '-std=gnu99'
+            ],
+            'xcode_settings': {
+                'GCC_C_LANGUAGE_STANDARD': 'gnu99'
+            },
             'conditions': [
                 ['OS=="linux"', {
                         'defines': [
