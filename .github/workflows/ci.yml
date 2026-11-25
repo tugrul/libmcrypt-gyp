@@ -97,13 +97,23 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [linux/s390x, linux/ppc64le, linux/arm/v7, linux/386]
+        include:
+          - { platform: linux/s390x }
+          - { platform: linux/ppc64le }
+          - { platform: linux/arm/v7 }
+          # Docker 29.4.2 on the ubuntu-26.04 runner image blocks socketcall(2)
+          # in its default seccomp profile. 32-bit x86 glibc opens every
+          # socket through that call, so the container has no network and
+          # apt-get cannot resolve deb.debian.org (actions/runner-images#14790).
+          # Docker 29.4.3 allows it again: drop the option once the runner
+          # image ships it.
+          - { platform: linux/386, docker-options: --security-opt seccomp=unconfined }
     steps:
       - uses: actions/checkout@v6
       - uses: docker/setup-qemu-action@v4
       - name: Build and test in the container
         run: |
-          docker run --rm --platform ${{ matrix.platform }} -v "$PWD":/src:ro debian:trixie-slim sh -euxc '
+          docker run --rm --platform ${{ matrix.platform }} ${{ matrix.docker-options }} -v "$PWD":/src:ro debian:trixie-slim sh -euxc '
             apt-get update -qq
             apt-get install -y -qq --no-install-recommends gcc libc6-dev make cmake
             gcc -dumpmachine
