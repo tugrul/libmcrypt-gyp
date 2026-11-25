@@ -38,6 +38,11 @@
  * transformed by unix crypt() or the mhash SCRYPT 
  */
 
+/* The key generator below depends on 32-bit wrap-around. Signed overflow is
+ * undefined in C and optimisers act on that, so multiply and add as unsigned
+ * and convert back. The values are the same as with wrapping signed ints. */
+#define MUL_ADD(a, b, c) ((sword32) ((word32) (a) * (word32) (b) + (word32) (c)))
+
 WIN32DLL_DEFINE
     int _mcrypt_set_key(CRYPT_KEY * ckey, char *password, int plen,
 			void *u1, int u2)
@@ -57,13 +62,13 @@ WIN32DLL_DEFINE
 
 	seed = 123;
 	for (i = 0; i < 13; i++)
-		seed = seed * ckey->cbuf[i] + i;
+		seed = MUL_ADD(seed, ckey->cbuf[i], i);
 	for (i = 0; i < ROTORSZ; i++) {
 		ckey->t1[i] = i;
 		ckey->deck[i] = i;
 	}
 	for (i = 0; i < ROTORSZ; i++) {
-		seed = 5 * seed + ckey->cbuf[i % 13];
+		seed = MUL_ADD(5, seed, ckey->cbuf[i % 13]);
 		random = seed % 65521;
 		k = ROTORSZ - 1 - i;
 		ic = (random & MASK) % (k + 1);
@@ -96,7 +101,7 @@ int shuffle(CRYPT_KEY * ckey)
 	static sword32 seed = 123;
 
 	for (i = 0; i < ROTORSZ; i++) {
-		seed = 5 * seed + ckey->cbuf[i % 13];
+		seed = MUL_ADD(5, seed, ckey->cbuf[i % 13]);
 		random = seed % 65521;
 		k = ROTORSZ - 1 - i;
 		ic = (random & MASK) % (k + 1);
