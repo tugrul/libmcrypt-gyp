@@ -520,6 +520,9 @@ WIN32DLL_DEFINE
 {
 	int keyblocks = (8 * keysize) / (PAN_STAGE_SIZE * WORDLENGTH);
 	int vecblocks = (8 * vecsize) / (PAN_STAGE_SIZE * WORDLENGTH);
+#ifdef WORDS_BIGENDIAN
+	int i;
+#endif
 
 	pan_key->keymat = (void*) pan_key->wkeymat;
 

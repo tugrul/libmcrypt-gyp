@@ -11,6 +11,15 @@
 # include <sys/types.h>
 #endif
 
+/* The gyp build has no configure step, so nothing defines WORDS_BIGENDIAN.
+ * Take the byte order from the compiler instead (GCC and clang define these;
+ * every MSVC target is little-endian). */
+#if !defined(WORDS_BIGENDIAN) && defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__)
+# if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#  define WORDS_BIGENDIAN 1
+# endif
+#endif
+
 #ifdef WIN32
 # define WIN32DLL_DEFINE __declspec( dllexport)
 #else
