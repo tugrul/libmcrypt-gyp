@@ -32,6 +32,25 @@
 extern const mcrypt_mode_module mcrypt_mode_modules[9];
 extern const mcrypt_algo_module mcrypt_algo_modules[20];
 
+/* Module names compare equal when they differ only in '-' versus '_',
+ * as in upstream ("rijndael_128" opens "rijndael-128"). */
+static int mcrypt_strcmp(const char* str1, const char* str2)
+{
+    size_t i, len = strlen(str1);
+
+    if (len != strlen(str2)) {
+        return -1;
+    }
+
+    for (i = 0; i < len; i++) {
+        if (str1[i] == '_' && str2[i] == '-') continue;
+        if (str2[i] == '_' && str1[i] == '-') continue;
+        if (str1[i] != str2[i]) return -1;
+    }
+
+    return 0;
+}
+
 const mcrypt_algo_module* mcrypt_module_get_algo(const char* name)
 {
     int size = sizeof(mcrypt_algo_modules) / sizeof(mcrypt_algo_module) - 1;
@@ -43,7 +62,7 @@ const mcrypt_algo_module* mcrypt_module_get_algo(const char* name)
 
     for (module = mcrypt_algo_modules; module < mcrypt_algo_modules + size; module++) {
         if (module->name != NULL 
-            && (strcmp(module->name, name) == 0)) {
+            && (mcrypt_strcmp(module->name, name) == 0)) {
             return module;
         }
     }
@@ -62,7 +81,7 @@ const mcrypt_mode_module* mcrypt_module_get_mode(const char* name)
 
     for (module = mcrypt_mode_modules; module < mcrypt_mode_modules + size; module++) {
         if (module->name != NULL 
-            && (strcmp(module->name, name) == 0)) {
+            && (mcrypt_strcmp(module->name, name) == 0)) {
             return module;
         }
     }
