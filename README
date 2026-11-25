@@ -11,3 +11,28 @@ algorithms which most of them are public domain.
 
 Since 2.5.4 libmcrypt does not use dynamic loading for the modules by default.
 All the algorithms and modes, are now included in the library. 
+
+**
+** Building with CMake:
+
+CMakeLists.txt builds the same static library as libmcrypt.gyp. It is meant
+to be pulled into another project, not installed system-wide, because the
+mcrypt.h in this tree differs from upstream's (no module directory arguments).
+
+    add_subdirectory(third_party/libmcrypt)
+    target_link_libraries(app PRIVATE libmcrypt::libmcrypt)
+
+or, without a copy in your tree:
+
+    include(FetchContent)
+    FetchContent_Declare(libmcrypt
+        GIT_REPOSITORY https://github.com/tugrul/libmcrypt-gyp.git
+        GIT_TAG        <commit>)
+    FetchContent_MakeAvailable(libmcrypt)
+    target_link_libraries(app PRIVATE libmcrypt::libmcrypt)
+
+Then #include <mcrypt.h>. To build and test the library on its own:
+
+    cmake -S . -B build
+    cmake --build build
+    ctest --test-dir build --output-on-failure

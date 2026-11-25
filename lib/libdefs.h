@@ -20,7 +20,9 @@
 # endif
 #endif
 
-#ifdef WIN32
+/* LIBMCRYPT_STATIC (set by the CMake build) keeps a program that links the
+ * static library from re-exporting every libmcrypt function on Windows. */
+#if defined(WIN32) && !defined(LIBMCRYPT_STATIC)
 # define WIN32DLL_DEFINE __declspec( dllexport)
 #else
 # define WIN32DLL_DEFINE
