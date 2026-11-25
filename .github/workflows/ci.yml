@@ -139,3 +139,22 @@ jobs:
         run: cmake --build build --parallel
       - name: Test
         run: ctest --test-dir build --output-on-failure
+
+  # Every module is called through the function pointers in its descriptor
+  # (lib/mcrypt_registry.h). Clang's function sanitizer stops the program at
+  # an indirect call whose pointer type is not the type of the function it
+  # reaches, so this job fails if a module's signature drifts from the
+  # interface and a cast hides it.
+  function-types:
+    name: Function pointer types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Configure
+        run: >
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang
+          "-DCMAKE_C_FLAGS=-fsanitize=function -fsanitize-trap=function"
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
