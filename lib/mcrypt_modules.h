@@ -1,5 +1,7 @@
-#define rotl32(x,n)   (((x) << ((word32)(n))) | ((x) >> (32 - (word32)(n))))
-#define rotr32(x,n)   (((x) >> ((word32)(n))) | ((x) << (32 - (word32)(n))))
+/* The count is reduced modulo 32, so a count of 0 or of 32 and more is
+ * defined behaviour. CAST-256 passes counts up to 2^32-1 and relies on that. */
+#define rotl32(x,n)   (((x) << ((word32)(n) & 31)) | ((x) >> ((32 - ((word32)(n) & 31)) & 31)))
+#define rotr32(x,n)   (((x) >> ((word32)(n) & 31)) | ((x) << ((32 - ((word32)(n) & 31)) & 31)))
 #define rotl16(x,n)   (((x) << ((word16)(n))) | ((x) >> (16 - (word16)(n))))
 #define rotr16(x,n)   (((x) >> ((word16)(n))) | ((x) << (16 - (word16)(n))))
 

@@ -44,7 +44,9 @@
 #define U8d(x) ( (u8) ((x)&255) )
 
 /* Circular left shift */
-#define ROL(x, n) ( ((x)<<(n)) | ((x)>>(32-(n))) )
+/* Only the low five bits of the rotation subkey count (RFC 2144). Masking
+ * keeps the shifts defined when the subkey word is 0 or 32 and more. */
+#define ROL(x, n) ( ((x)<<((n)&31)) | ((x)>>((32-((n)&31))&31)) )
 
 /* CAST-128 uses three different round functions */
 #define F1(l, r, i) \
