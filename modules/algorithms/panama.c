@@ -309,7 +309,7 @@
 *
 +**************************************************************************/
 
-static void pan_pull(word32 * restrict In,	/* input array                   */
+static void pan_pull(const word32 * restrict In,	/* input array                   */
 	      word32 * restrict Out,	/* output array                  */
 	      word32 pan_blocks,	/* number of blocks to be Pulled */
 	      PAN_BUFFER * restrict buffer,	/* LFSR buffer                   */
@@ -327,7 +327,7 @@ static void pan_pull(word32 * restrict In,	/* input array                   */
 	PAN_STAGE *restrict L, *restrict b;
 
 	/* configure routine according to which PULL mode is intended */
-	static word32 null_in[PAN_STAGE_SIZE] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+	static const word32 null_in[PAN_STAGE_SIZE] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 	word32 dummy_out[PAN_STAGE_SIZE];
 	word32 in_step, out_step;
 

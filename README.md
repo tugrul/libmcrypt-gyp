@@ -141,9 +141,9 @@ int main(void)
 }
 ```
 
-The header declares algorithm and mode names as `char *`, not `const char *`.
-That is fine in C. A C++ compiler warns when a string literal is passed, so
-cast it: `const_cast<char *>("cbc")`.
+Names, the key, the IV and a saved state are taken as pointers to `const`, so
+a string literal or a constant buffer can be passed without a cast, in C and in
+C++.
 
 ## Algorithms
 
@@ -287,9 +287,9 @@ mode writes to data that handles share: the lookup tables are constants.
 
 | Function | What it does |
 | --- | --- |
-| `MCRYPT mcrypt_module_open(char *algorithm, char *mode)` | Creates a handle. `MCRYPT_FAILED` on error. |
+| `MCRYPT mcrypt_module_open(const char *algorithm, const char *mode)` | Creates a handle. `MCRYPT_FAILED` on error. |
 | `int mcrypt_module_close(MCRYPT td)` | Frees a handle. |
-| `int mcrypt_generic_init(MCRYPT td, void *key, int lenofkey, void *IV)` | Sets key and IV. 0 or a negative error code. |
+| `int mcrypt_generic_init(MCRYPT td, const void *key, int lenofkey, const void *IV)` | Sets key and IV. 0 or a negative error code. |
 | `int mcrypt_generic(MCRYPT td, void *plaintext, int len)` | Encrypts in place. |
 | `int mdecrypt_generic(MCRYPT td, void *ciphertext, int len)` | Decrypts in place. |
 | `int mcrypt_generic_deinit(MCRYPT td)` | Drops the key; the handle stays usable for another init. |
@@ -306,20 +306,20 @@ mode writes to data that handles share: the lookup tables are constants.
 | `char *mcrypt_enc_get_modes_name(MCRYPT td)` | Display name such as `CBC`. Free it. |
 | `int mcrypt_enc_self_test(MCRYPT td)` | Runs the algorithm's known-answer test. 0 when it passes. |
 | `int mcrypt_enc_get_state(MCRYPT td, void *st, int *size)` | Copies out the mode's chaining state. `*size` is the room in `st` on entry and the bytes written on return. Not for `ecb` and `stream`. |
-| `int mcrypt_enc_set_state(MCRYPT td, void *st, int size)` | Puts a saved state back. |
+| `int mcrypt_enc_set_state(MCRYPT td, const void *st, int size)` | Puts a saved state back. |
 | `char **mcrypt_list_algorithms(int *size)` | Names of all algorithms. |
 | `char **mcrypt_list_modes(int *size)` | Names of all modes. |
 | `void mcrypt_free_p(char **p, int size)` | Frees such a list. |
 | `void mcrypt_free(void *ptr)` | Frees anything else the library returned. |
-| `int mcrypt_module_self_test(char *algorithm)` | Known-answer test by name. 0 when it passes. |
-| `int mcrypt_module_is_block_algorithm(char *algorithm)` | As the `mcrypt_enc_` function, by name. |
-| `int mcrypt_module_is_block_algorithm_mode(char *mode)` | As the `mcrypt_enc_` function, by name. |
-| `int mcrypt_module_is_block_mode(char *mode)` | As the `mcrypt_enc_` function, by name. |
-| `int mcrypt_module_get_algo_key_size(char *algorithm)` | Longest key in bytes. |
-| `int mcrypt_module_get_algo_block_size(char *algorithm)` | Block size in bytes. |
-| `int *mcrypt_module_get_algo_supported_key_sizes(char *algorithm, int *len)` | As the `mcrypt_enc_` function, by name. |
-| `int mcrypt_module_algorithm_version(char *algorithm)` | A date such as `20010801`. |
-| `int mcrypt_module_mode_version(char *mode)` | A date such as `20010801`. |
+| `int mcrypt_module_self_test(const char *algorithm)` | Known-answer test by name. 0 when it passes. |
+| `int mcrypt_module_is_block_algorithm(const char *algorithm)` | As the `mcrypt_enc_` function, by name. |
+| `int mcrypt_module_is_block_algorithm_mode(const char *mode)` | As the `mcrypt_enc_` function, by name. |
+| `int mcrypt_module_is_block_mode(const char *mode)` | As the `mcrypt_enc_` function, by name. |
+| `int mcrypt_module_get_algo_key_size(const char *algorithm)` | Longest key in bytes. |
+| `int mcrypt_module_get_algo_block_size(const char *algorithm)` | Block size in bytes. |
+| `int *mcrypt_module_get_algo_supported_key_sizes(const char *algorithm, int *len)` | As the `mcrypt_enc_` function, by name. |
+| `int mcrypt_module_algorithm_version(const char *algorithm)` | A date such as `20010801`. |
+| `int mcrypt_module_mode_version(const char *mode)` | A date such as `20010801`. |
 | `const char *mcrypt_check_version(const char *req)` | The version string `2.5.8` if the library is at least `req` (or `req` is `NULL`), otherwise `NULL`. |
 | `const char *mcrypt_strerror(int err)` | Text for an error code, ending in a newline; `NULL` for an unknown code. |
 | `void mcrypt_perror(int err)` | Prints that text to `stderr`. |
@@ -391,9 +391,14 @@ modules.
 | `mcrypt_module_mode_version` | `(mode, a_directory)` | `(mode)` |
 
 `mcrypt_module_support_dynamic()` and `mcrypt_mutex_register()` are removed.
-The other 24 functions keep their upstream signatures. Code written for
-upstream needs the directory arguments deleted and calls to the two removed
-functions dropped.
+Code written for upstream needs the directory arguments deleted and calls to
+the two removed functions dropped.
+
+The header declares names, the key, the IV and a saved state as pointers to
+`const`. Upstream's header says `char *` and `void *` for them, although its
+own definitions take `const`. Calls written for the old declarations compile
+unchanged. Apart from that the other 24 functions keep their upstream
+signatures.
 
 The header still reports version `2.5.8` and `MCRYPT_API_VERSION 20021217`, so
 neither can tell this library from upstream.
@@ -438,7 +443,11 @@ repeating the same calls here.
 **Module registry.** Upstream gave every module function a name-mangled global
 symbol (`rijndael_128_LTX__mcrypt_set_key`) and generated a table of them.
 Here each module keeps its functions `static` and exports one descriptor; see
-[Adding an algorithm or a mode](#adding-an-algorithm-or-a-mode).
+[Adding an algorithm or a mode](#adding-an-algorithm-or-a-mode). That includes
+the helpers and tables that some ciphers exported under short names such as
+`mu`, `rho`, `shuffle`, `qp` and `f_fun`, which could clash with a symbol of
+the program the library is linked into. The descriptor is now the only
+external symbol of every module.
 
 ## Known problems
 

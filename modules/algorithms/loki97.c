@@ -91,7 +91,7 @@ static const word32 delta[2] = { 0x7f4a7c15, 0x9e3779b9 };
 #define add_eq(x,y)     (x)[1] += (y)[1] + (((x)[0] += (y)[0]) < (y)[0] ? 1 : 0)
 #define sub_eq(x,y)     xs = (x)[0]; (x)[1] -= (y)[1] + (((x)[0] -= (y)[0]) > xs ? 1 : 0)
 
-void f_fun(word32 res[2], const word32 in[2], const word32 key[2])
+static void f_fun(word32 res[2], const word32 in[2], const word32 key[2])
 {
 	word32 i, tt[2], pp[2];
 

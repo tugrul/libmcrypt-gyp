@@ -62,41 +62,41 @@
 
 #define G_M 0x0169
 
-byte tab_5b[4] = { 0, G_M >> 2, G_M >> 1, (G_M >> 1) ^ (G_M >> 2) };
-byte tab_ef[4] = { 0, (G_M >> 1) ^ (G_M >> 2), G_M >> 1, G_M >> 2 };
+static const byte tab_5b[4] = { 0, G_M >> 2, G_M >> 1, (G_M >> 1) ^ (G_M >> 2) };
+static const byte tab_ef[4] = { 0, (G_M >> 1) ^ (G_M >> 2), G_M >> 1, G_M >> 2 };
 
 #define ffm_01(x)    (x)
 #define ffm_5b(x)   ((x) ^ ((x) >> 2) ^ tab_5b[(x) & 3])
 #define ffm_ef(x)   ((x) ^ ((x) >> 1) ^ ((x) >> 2) ^ tab_ef[(x) & 3])
 
-byte ror4[16] = { 0, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15 };
-byte ashx[16] = { 0, 9, 2, 11, 4, 13, 6, 15, 8, 1, 10, 3, 12, 5, 14, 7 };
+static const byte ror4[16] = { 0, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15 };
+static const byte ashx[16] = { 0, 9, 2, 11, 4, 13, 6, 15, 8, 1, 10, 3, 12, 5, 14, 7 };
 
-byte qt0[2][16] = {
+static const byte qt0[2][16] = {
 	{8, 1, 7, 13, 6, 15, 3, 2, 0, 11, 5, 9, 14, 12, 10, 4}
 	,
 	{2, 8, 11, 13, 15, 7, 6, 14, 3, 1, 9, 4, 0, 10, 12, 5}
 };
 
-byte qt1[2][16] = {
+static const byte qt1[2][16] = {
 	{14, 12, 11, 8, 1, 2, 3, 5, 15, 4, 10, 6, 7, 0, 9, 13}
 	,
 	{1, 14, 2, 11, 4, 12, 3, 7, 6, 13, 10, 5, 15, 9, 0, 8}
 };
 
-byte qt2[2][16] = {
+static const byte qt2[2][16] = {
 	{11, 10, 5, 14, 6, 13, 9, 0, 12, 8, 15, 3, 2, 4, 7, 1}
 	,
 	{4, 12, 7, 5, 1, 6, 9, 10, 0, 14, 13, 8, 2, 11, 3, 15}
 };
 
-byte qt3[2][16] = {
+static const byte qt3[2][16] = {
 	{13, 7, 15, 4, 1, 2, 6, 14, 9, 11, 3, 0, 8, 5, 12, 10}
 	,
 	{11, 9, 5, 1, 12, 3, 13, 14, 6, 4, 7, 15, 2, 0, 8, 10}
 };
 
-byte qp(const word32 n, const byte x)
+static byte qp(const word32 n, const byte x)
 {
 	byte a0, a1, a2, a3, a4, b0, b1, b2, b3, b4;
 
@@ -117,7 +117,7 @@ byte qp(const word32 n, const byte x)
 
 #define q(n,x)  pkey->q_tab[n][x]
 
-void gen_qtab(TWI * pkey)
+static void gen_qtab(TWI * pkey)
 {
 	word32 i;
 
@@ -135,7 +135,7 @@ void gen_qtab(TWI * pkey)
 
 #ifdef  M_TABLE
 
-void gen_mtab(TWI * pkey)
+static void gen_mtab(TWI * pkey)
 {
 	word32 i, f01, f5b, fef;
 
@@ -195,7 +195,7 @@ void gen_mtab(TWI * pkey)
 
 #endif
 
-word32 h_fun(TWI * pkey, const word32 x, const word32 key[])
+static word32 h_fun(TWI * pkey, const word32 x, const word32 key[])
 {
 	word32 b0, b1, b2, b3;
 
@@ -271,7 +271,7 @@ word32 h_fun(TWI * pkey, const word32 x, const word32 key[])
 #define q42(x)  q(1,q(0,q(0, q(0, x) ^ byte(key[3],2)) ^ byte(key[2],2)) ^ byte(key[1],2)) ^ byte(key[0],2)
 #define q43(x)  q(1,q(1,q(0, q(1, x) ^ byte(key[3],3)) ^ byte(key[2],3)) ^ byte(key[1],3)) ^ byte(key[0],3)
 
-void gen_mk_tab(TWI * pkey, word32 key[])
+static void gen_mk_tab(TWI * pkey, word32 key[])
 {
 	word32 i;
 	byte by;
@@ -377,7 +377,7 @@ void gen_mk_tab(TWI * pkey, word32 key[])
 
 #define G_MOD   0x0000014d
 
-word32 mds_rem(word32 p0, word32 p1)
+static word32 mds_rem(word32 p0, word32 p1)
 {
 	word32 i, t, u;
 

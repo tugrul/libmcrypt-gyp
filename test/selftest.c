@@ -62,7 +62,7 @@ static void test_aes_vectors(void)
 	size_t i;
 
 	for (i = 0; i < sizeof(aes_vectors) / sizeof(aes_vectors[0]); i++) {
-		MCRYPT td = mcrypt_module_open("rijndael-128", (char *) aes_vectors[i].mode);
+		MCRYPT td = mcrypt_module_open("rijndael-128", aes_vectors[i].mode);
 
 		if (td == MCRYPT_FAILED) {
 			fail("open", "rijndael-128", aes_vectors[i].mode);
@@ -87,7 +87,7 @@ static void test_round_trip(const char *algo, const char *mode, int *pairs)
 {
 	unsigned char key[512], iv[512], plain[512], buf[512];
 	int i, keysize, ivsize, len;
-	MCRYPT td = mcrypt_module_open((char *) algo, (char *) mode);
+	MCRYPT td = mcrypt_module_open(algo, mode);
 
 	if (td == MCRYPT_FAILED)
 		return;		/* block algorithm with a stream mode, or the reverse */
@@ -159,7 +159,7 @@ static void test_split_calls(const char *algo, const char *mode)
 {
 	unsigned char key[512], iv[512], plain[512], whole[512], pieces[512];
 	int i, n, off, keysize, ivsize, bs, block_mode, len;
-	MCRYPT td = mcrypt_module_open((char *) algo, (char *) mode);
+	MCRYPT td = mcrypt_module_open(algo, mode);
 
 	if (td == MCRYPT_FAILED)
 		return;

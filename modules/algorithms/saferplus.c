@@ -69,7 +69,7 @@ Mean:         3392 cycles =     7.5 mbits/sec
 #include "saferplus.h"
 #include <stdlib.h>
 
-byte safer_expf[256] =
+static const byte safer_expf[256] =
     { 1, 45, 226, 147, 190, 69, 21, 174, 120, 3, 135, 164, 184, 56, 207,
 	63,
 	8, 103, 9, 148, 235, 38, 168, 107, 189, 24, 52, 27, 187, 191, 114,
@@ -104,7 +104,7 @@ byte safer_expf[256] =
 	40
 };
 
-byte safer_logf[512] = {
+static const byte safer_logf[512] = {
 	128, 0, 176, 9, 96, 239, 185, 253, 16, 18, 159, 228, 105, 186, 173,
 	248,
 	192, 56, 194, 101, 79, 6, 148, 252, 25, 222, 106, 27, 93, 78, 168,
@@ -229,7 +229,7 @@ static int _mcrypt_set_key(void *ctx, const void *key, int len)
 	return 0;
 }
 
-void do_fr(byte x[16], byte * kp)
+static void do_fr(byte x[16], byte * kp)
 {
 	byte t;
 
@@ -342,7 +342,7 @@ void do_fr(byte x[16], byte * kp)
 	x[3] = t;
 }
 
-void do_ir(byte x[16], byte * kp)
+static void do_ir(byte x[16], byte * kp)
 {
 	byte t;
 

@@ -82,7 +82,7 @@ static int _mcrypt_set_key(void *ctx, const void *key, int plen,
 }
 
 
-int shuffle(CRYPT_KEY * ckey)
+static int shuffle(CRYPT_KEY * ckey)
 {
 	int i, ic, k, temp;
 	unsigned random;

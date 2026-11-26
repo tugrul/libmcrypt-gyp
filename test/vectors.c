@@ -70,17 +70,17 @@
 # define M_FOR_BLOCK(m)		mcrypt_module_is_block_algorithm_mode((char *) (m), NULL)
 # define M_VERSION(m)		mcrypt_module_mode_version((char *) (m), NULL)
 #else
-# define OPEN(a, m)		mcrypt_module_open((char *) (a), (char *) (m))
+# define OPEN(a, m)		mcrypt_module_open(a, m)
 # define LIST_ALGORITHMS(n)	mcrypt_list_algorithms(n)
 # define LIST_MODES(n)		mcrypt_list_modes(n)
-# define A_IS_BLOCK(a)		mcrypt_module_is_block_algorithm((char *) (a))
-# define A_BLOCK_SIZE(a)	mcrypt_module_get_algo_block_size((char *) (a))
-# define A_KEY_SIZE(a)		mcrypt_module_get_algo_key_size((char *) (a))
-# define A_KEY_SIZES(a, n)	mcrypt_module_get_algo_supported_key_sizes((char *) (a), n)
-# define A_VERSION(a)		mcrypt_module_algorithm_version((char *) (a))
-# define M_IS_BLOCK(m)		mcrypt_module_is_block_mode((char *) (m))
-# define M_FOR_BLOCK(m)		mcrypt_module_is_block_algorithm_mode((char *) (m))
-# define M_VERSION(m)		mcrypt_module_mode_version((char *) (m))
+# define A_IS_BLOCK(a)		mcrypt_module_is_block_algorithm(a)
+# define A_BLOCK_SIZE(a)	mcrypt_module_get_algo_block_size(a)
+# define A_KEY_SIZE(a)		mcrypt_module_get_algo_key_size(a)
+# define A_KEY_SIZES(a, n)	mcrypt_module_get_algo_supported_key_sizes(a, n)
+# define A_VERSION(a)		mcrypt_module_algorithm_version(a)
+# define M_IS_BLOCK(m)		mcrypt_module_is_block_mode(m)
+# define M_FOR_BLOCK(m)		mcrypt_module_is_block_algorithm_mode(m)
+# define M_VERSION(m)		mcrypt_module_mode_version(m)
 #endif
 
 #define MAX_DATA 256		/* longest message, and room for the longest key */

@@ -35,14 +35,14 @@ typedef struct CRYPT_STREAM *MCRYPT;
 
 /* generic - high level functions. 
  */
-	MCRYPT mcrypt_module_open(char *algorithm, char *mode);
+	MCRYPT mcrypt_module_open(const char *algorithm, const char *mode);
 	int mcrypt_module_close(MCRYPT td);
 
 
 /* returns thread descriptor */
 
-	int mcrypt_generic_init(const MCRYPT td, void *key, int lenofkey,
-				void *IV);
+	int mcrypt_generic_init(const MCRYPT td, const void *key, int lenofkey,
+				const void *IV);
 	int mcrypt_generic_deinit(const MCRYPT td);
 	int mcrypt_generic_end(const MCRYPT td);
 	int mdecrypt_generic(MCRYPT td, void *plaintext, int len);
@@ -50,7 +50,7 @@ typedef struct CRYPT_STREAM *MCRYPT;
 
 /* extra functions */
 
-	int mcrypt_enc_set_state(MCRYPT td, void *st, int size);
+	int mcrypt_enc_set_state(MCRYPT td, const void *st, int size);
 	int mcrypt_enc_get_state(MCRYPT td, void *st, int *size); /* only 
 	* for block algorithms and certain modes like cbc
 	* ncfb etc.
@@ -97,21 +97,21 @@ typedef struct CRYPT_STREAM *MCRYPT;
 
 	/* Self test for the specified algorithm 
 	 */
-	int mcrypt_module_self_test(char *algorithm);
+	int mcrypt_module_self_test(const char *algorithm);
 
-	int mcrypt_module_is_block_algorithm(char *algorithm);
-	int mcrypt_module_is_block_algorithm_mode(char *mode);
-	int mcrypt_module_is_block_mode(char *mode);
+	int mcrypt_module_is_block_algorithm(const char *algorithm);
+	int mcrypt_module_is_block_algorithm_mode(const char *mode);
+	int mcrypt_module_is_block_mode(const char *mode);
 
-	int mcrypt_module_get_algo_key_size(char *algorithm);
-	int mcrypt_module_get_algo_block_size(char *algorithm);
+	int mcrypt_module_get_algo_key_size(const char *algorithm);
+	int mcrypt_module_get_algo_block_size(const char *algorithm);
 
-	int *mcrypt_module_get_algo_supported_key_sizes(char *algorithm, int *len);
+	int *mcrypt_module_get_algo_supported_key_sizes(const char *algorithm, int *len);
 
 	/* Checks the version of the specified module 
 	 */
-	int mcrypt_module_algorithm_version(char *algorithm);
-	int mcrypt_module_mode_version(char *mode);
+	int mcrypt_module_algorithm_version(const char *algorithm);
+	int mcrypt_module_mode_version(const char *mode);
 
 
 	const char *

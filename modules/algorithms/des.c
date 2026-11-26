@@ -34,7 +34,7 @@ static word32 f(DES_KEY * key, register word32 r, register char *subkey);
 /* Tables defined in the Data Encryption Standard documents */
 
 /* initial permutation IP */
-static char ip[] = {
+static const char ip[] = {
 	58, 50, 42, 34, 26, 18, 10, 2,
 	60, 52, 44, 36, 28, 20, 12, 4,
 	62, 54, 46, 38, 30, 22, 14, 6,
@@ -46,7 +46,7 @@ static char ip[] = {
 };
 
 /* final permutation IP^-1 */
-static char fp[] = {
+static const char fp[] = {
 	40, 8, 48, 16, 56, 24, 64, 32,
 	39, 7, 47, 15, 55, 23, 63, 31,
 	38, 6, 46, 14, 54, 22, 62, 30,
@@ -75,7 +75,7 @@ static char ei[] = {
 #endif
 
 /* permuted choice table (key) */
-static char pc1[] = {
+static const char pc1[] = {
 	57, 49, 41, 33, 25, 17, 9,
 	1, 58, 50, 42, 34, 26, 18,
 	10, 2, 59, 51, 43, 35, 27,
@@ -88,12 +88,12 @@ static char pc1[] = {
 };
 
 /* number left rotations of pc1 */
-static char totrot[] = {
+static const char totrot[] = {
 	1, 2, 4, 6, 8, 10, 12, 14, 15, 17, 19, 21, 23, 25, 27, 28
 };
 
 /* permuted choice key (table) */
-static char pc2[] = {
+static const char pc2[] = {
 	14, 17, 11, 24, 1, 5,
 	3, 28, 15, 6, 21, 10,
 	23, 19, 12, 4, 26, 8,
@@ -105,7 +105,7 @@ static char pc2[] = {
 };
 
 /* The (in)famous S-boxes */
-static char si[8][64] = {
+static const char si[8][64] = {
 	/* S1 */
 	{14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7,
 	 0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8,
@@ -157,7 +157,7 @@ static char si[8][64] = {
 };
 
 /* 32-bit permutation function P used on the output of the S-boxes */
-static char p32i[] = {
+static const char p32i[] = {
 	16, 7, 20, 21,
 	29, 12, 28, 17,
 	1, 15, 23, 26,
@@ -173,11 +173,11 @@ static char p32i[] = {
 /* Lookup tables initialized once only at startup by desinit() */
 
 /* bit 0 is left-most in byte */
-static int bytebit[] = {
+static const int bytebit[] = {
 	0200, 0100, 040, 020, 010, 04, 02, 01
 };
 
-static int nibblebit[] = {
+static const int nibblebit[] = {
 	010, 04, 02, 01
 };
 

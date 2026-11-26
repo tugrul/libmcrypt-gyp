@@ -73,7 +73,7 @@ typedef struct {
 
 /****** function prototypes ******/
 
-static void pan_pull(word32 * restrict In,	/* input array                    */
+static void pan_pull(const word32 * restrict In,	/* input array                    */
 	      word32 * restrict Out,	/* output array                   */
 	      word32 pan_blocks,	/* number of blocks to be Pulled  */
 	      PAN_BUFFER * restrict buffer,	/* LFSR buffer                    */

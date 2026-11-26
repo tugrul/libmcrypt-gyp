@@ -32,7 +32,7 @@ static int _mcrypt_set_key(void *ctx, const void *key, int len)
 }
 
 
-void mu(word32 * a)
+static void mu(word32 * a)
 {				/* inverts the order of the bits of a */
 	int i;
 	word32 b[3];
@@ -58,7 +58,7 @@ void mu(word32 * a)
 	a[2] = b[2];
 }
 
-void threeway_gamma(word32 * a)
+static void threeway_gamma(word32 * a)
 {				/* the nonlinear step */
 	word32 b[3];
 
@@ -72,7 +72,7 @@ void threeway_gamma(word32 * a)
 }
 
 
-void theta(word32 * a)
+static void theta(word32 * a)
 {				/* the linear step */
 	word32 b[3];
 
@@ -103,19 +103,19 @@ void theta(word32 * a)
 	a[2] = b[2];
 }
 
-void pi_1(word32 * a)
+static void pi_1(word32 * a)
 {
 	a[0] = (a[0] >> 10) ^ (a[0] << 22);
 	a[2] = (a[2] << 1) ^ (a[2] >> 31);
 }
 
-void pi_2(word32 * a)
+static void pi_2(word32 * a)
 {
 	a[0] = (a[0] << 1) ^ (a[0] >> 31);
 	a[2] = (a[2] >> 10) ^ (a[2] << 22);
 }
 
-void rho(word32 * a)
+static void rho(word32 * a)
 {				/* the round function       */
 	theta(a);
 	pi_1(a);
@@ -123,7 +123,7 @@ void rho(word32 * a)
 	pi_2(a);
 }
 
-void rndcon_gen(word32 strt, word32 * rtab)
+static void rndcon_gen(word32 strt, word32 * rtab)
 {				/* generates the round constants */
 	int i;
 
