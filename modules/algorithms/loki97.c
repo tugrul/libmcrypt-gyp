@@ -81,71 +81,15 @@ Mean:         2186 cycles =    11.7 mbits/sec
 #define S2_HMASK    (S2_MASK & ~0xff)
 #define S2_POLY     0x0aa7
 
-word32 delta[2] = { 0x7f4a7c15, 0x9e3779b9 };
+static const word32 delta[2] = { 0x7f4a7c15, 0x9e3779b9 };
 
-byte sb1[S1_LEN];		/* GF(2^11) S box */
-byte sb2[S2_LEN];		/* GF(2^11) S box */
-word32 prm[256][2];
-word32 init_done = 0;
+/* sb1 (the GF(2^13) S box), sb2 (the GF(2^11) S box) and prm */
+#include "loki97-tables.h"
 
 /* word32  l_key[96]; */
 
 #define add_eq(x,y)     (x)[1] += (y)[1] + (((x)[0] += (y)[0]) < (y)[0] ? 1 : 0)
 #define sub_eq(x,y)     xs = (x)[0]; (x)[1] -= (y)[1] + (((x)[0] -= (y)[0]) > xs ? 1 : 0)
-
-word32 ff_mult(word32 a, word32 b, word32 tpow, word32 mpol)
-{
-	word32 s, m;
-
-	s = 0;
-	m = (1 << tpow);
-
-	while (b) {
-		if (b & 1)
-
-			s ^= a;
-
-		b >>= 1;
-		a <<= 1;
-
-		if (a & m)
-
-			a ^= mpol;
-	}
-
-	return s;
-}
-
-void init_tables(void)
-{
-	word32 i, j, v;
-
-	/* initialise S box 1 */
-
-	for (i = 0; i < S1_LEN; ++i) {
-		j = v = i ^ S1_MASK;
-		v = ff_mult(v, j, S1_SIZE, S1_POLY);
-		sb1[i] = (byte) ff_mult(v, j, S1_SIZE, S1_POLY);
-	}
-	/* initialise S box 2 */
-
-	for (i = 0; i < S2_LEN; ++i) {
-		j = v = i ^ S2_MASK;
-		v = ff_mult(v, j, S2_SIZE, S2_POLY);
-		sb2[i] = (byte) ff_mult(v, j, S2_SIZE, S2_POLY);
-	}
-
-	/* initialise permutation table */
-
-	for (i = 0; i < 256; ++i) {
-		prm[i][0] =
-		    ((i & 1) << 7) | ((i & 2) << 14) | ((i & 4) << 21) |
-		    ((i & 8) << 28);
-		prm[i][1] =
-		    ((i & 16) << 3) | ((i & 32) << 10) | ((i & 64) << 17) |
-		    ((i & 128) << 24);
-	}
-}
 
 void f_fun(word32 res[2], const word32 in[2], const word32 key[2])
 {
@@ -210,10 +154,6 @@ static int _mcrypt_set_key(void *ctx, const void *key, int len)
 	const word32 *in_key = key;
 	word32 i, k1[2], k2[2], k3[2], k4[2], del[2], tt[2], sk[2];
 
-	if (!init_done) {
-		init_tables();
-		init_done = 1;
-	}
 #ifdef WORDS_BIGENDIAN
 	k4[0] = byteswap32(in_key[1]);
 	k4[1] = byteswap32(in_key[0]);

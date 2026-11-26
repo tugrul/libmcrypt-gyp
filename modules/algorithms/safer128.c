@@ -33,39 +33,21 @@
 #include "safer.h"
 
 /******************* Constants ************************************************/
-#define TAB_LEN      256
-static int _safer128_init = 0;
 /******************* Assertions ***********************************************/
 
 /******************* Macros ***************************************************/
 #define ROL(x, n)    ((unsigned char)((unsigned int)(x) << (n)\
                                      |(unsigned int)((x) & 0xFF) >> (8 - (n))))
-#define EXP(x)       exp_tab128[(x) & 0xFF]
-#define LOG(x)       log_tab128[(x) & 0xFF]
+#define EXP(x)       safer_exp_tab[(x) & 0xFF]
+#define LOG(x)       safer_log_tab[(x) & 0xFF]
 #define PHT(x, y)    { y += x; x += y; }
 #define IPHT(x, y)   { x -= y; y -= x; }
 
 /******************* Types ****************************************************/
-static unsigned char exp_tab128[TAB_LEN];
-static unsigned char log_tab128[TAB_LEN];
 
 /******************* Module Data **********************************************/
 
 /******************* Functions ************************************************/
-
-/******************************************************************************/
-
-static void _mcrypt_Safer_Init_Module(void)
-{
-	unsigned int i, exp;
-
-	exp = 1;
-	for (i = 0; i < TAB_LEN; i++) {
-		exp_tab128[i] = (unsigned char) (exp & 0xFF);
-		log_tab128[exp_tab128[i]] = (unsigned char) i;
-		exp = exp * 45 % 257;
-	}
-}				/* Safer_Init_Module */
 
 /******************************************************************************/
 
@@ -81,10 +63,6 @@ static int _mcrypt_set_key(void *ctx, const void *user_key, int len)
 	const unsigned char *userkey_1 = &userkey[0];
 	const unsigned char *userkey_2 = &userkey[8];
 
-	if (_safer128_init == 0) {
-		_mcrypt_Safer_Init_Module();
-		_safer128_init = 1;
-	}
 	if (SAFER_MAX_NOF_ROUNDS < nof_rounds)
 		nof_rounds = SAFER_MAX_NOF_ROUNDS;
 	*key++ = (unsigned char) nof_rounds;
@@ -105,12 +83,12 @@ static int _mcrypt_set_key(void *ctx, const void *user_key, int len)
 				    (ka
 				     [(j + 2 * i - 1) %
 				      (SAFER_BLOCK_LEN + 1)] +
-				     exp_tab128[exp_tab128[18 * i + j + 1]]) &
+				     safer_exp_tab[safer_exp_tab[18 * i + j + 1]]) &
 				    0xFF;
 			else
 				*key++ =
 				    (ka[j] +
-				     exp_tab128[exp_tab128[18 * i + j + 1]]) &
+				     safer_exp_tab[safer_exp_tab[18 * i + j + 1]]) &
 				    0xFF;
 		for (j = 0; j < SAFER_BLOCK_LEN; j++)
 			if (strengthened)
@@ -118,12 +96,12 @@ static int _mcrypt_set_key(void *ctx, const void *user_key, int len)
 				    (kb
 				     [(j + 2 * i) %
 				      (SAFER_BLOCK_LEN + 1)] +
-				     exp_tab128[exp_tab128[18 * i + j + 10]]) &
+				     safer_exp_tab[safer_exp_tab[18 * i + j + 10]]) &
 				    0xFF;
 			else
 				*key++ =
 				    (kb[j] +
-				     exp_tab128[exp_tab128[18 * i + j + 10]]) &
+				     safer_exp_tab[safer_exp_tab[18 * i + j + 10]]) &
 				    0xFF;
 	}
 	for (j = 0; j < SAFER_BLOCK_LEN + 1; j++)

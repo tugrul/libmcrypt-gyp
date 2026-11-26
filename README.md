@@ -277,13 +277,8 @@ they do not know.
 ### Threads
 
 A handle holds all the state of one encryption. Use each handle from one thread
-at a time; separate handles can be used from separate threads.
-
-One exception: `rijndael-128`, `rijndael-192`, `rijndael-256`, `gost` and
-`loki97` build lookup tables the first time a key is set, without a lock. If
-two threads set their first key for one of these at the same moment they race
-on the tables. Call `mcrypt_generic_init()` once for the algorithm before you
-start the threads; after that there is no shared state that is written.
+at a time; separate handles can be used from separate threads. No cipher and no
+mode writes to data that handles share: the lookup tables are constants.
 
 ## Function reference
 
@@ -414,6 +409,13 @@ changing any output that was right before:
   a configure step.
 - The C dialect is pinned to gnu99. `des.c` and `tripledes.c` do not compile
   as C23, the default of GCC 15.
+
+**Constant lookup tables.** Upstream fills the tables of Rijndael, GOST and
+LOKI97 at the first key setup, in arrays that all threads share and without a
+lock. Two threads that set their first key at the same moment race on them,
+and GOST marks its tables as ready before it has filled them, so the second
+thread can encrypt with tables that are still half empty. Here the tables are
+constants with the values that code produced.
 
 **The `ncfb` fix.** In upstream, `ncfb` goes wrong when a message is handed
 over in several calls and one of them, other than the last, is not a whole

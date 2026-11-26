@@ -25,6 +25,7 @@
 
 #include <mcrypt_modules.h>
 #include "rijndael.h"
+#include "rijndael-tables.h"
 
 /* rotates x one bit to the left */
 
@@ -38,15 +39,10 @@
 
 /* Fixed Data */
 
-static byte InCo[4] = { 0xB, 0xD, 0x9, 0xE };	/* Inverse Coefficients */
+static const byte InCo[4] = { 0xB, 0xD, 0x9, 0xE };	/* Inverse Coefficients */
 
-static byte fbsub[256];
-static byte rbsub[256];
-static byte ptab[256], ltab[256];
-static word32 ftable[256];
-static word32 rtable[256];
-static word32 rco[30];
-static int tables_ok = 0;
+/* fbsub, rbsub, ptab, ltab, ftable, rtable and rco are in rijndael-tables.h */
+
 /* Parameter-dependent data */
 
 /* in "rijndael.h" */
@@ -64,18 +60,6 @@ static void unpack(word32 a, byte * b)
 	b[1] = (byte) (a >> 8);
 	b[2] = (byte) (a >> 16);
 	b[3] = (byte) (a >> 24);
-}
-
-static byte xtime(byte a)
-{
-	byte b;
-	if (a & 0x80)
-		b = 0x1B;
-	else
-		b = 0;
-	a <<= 1;
-	a ^= b;
-	return a;
 }
 
 static byte bmul(byte x, byte y)
@@ -124,72 +108,6 @@ static word32 InvMixCol(word32 x)
 	return y;
 }
 
-static byte ByteSub(byte x)
-{
-	byte y = ptab[255 - ltab[x]];	/* multiplicative inverse */
-	x = y;
-	x = ROTL(x);
-	y ^= x;
-	x = ROTL(x);
-	y ^= x;
-	x = ROTL(x);
-	y ^= x;
-	x = ROTL(x);
-	y ^= x;
-	y ^= 0x63;
-	return y;
-}
-
-static void _mcrypt_rijndael_gentables(void)
-{				/* generate tables */
-	int i;
-	byte y, b[4];
-
-	/* use 3 as primitive root to generate power and log tables */
-
-	ltab[0] = 0;
-	ptab[0] = 1;
-	ltab[1] = 0;
-	ptab[1] = 3;
-	ltab[3] = 1;
-	for (i = 2; i < 256; i++) {
-		ptab[i] = ptab[i - 1] ^ xtime(ptab[i - 1]);
-		ltab[ptab[i]] = i;
-	}
-
-	/* affine transformation:- each bit is xored with itself shifted one bit */
-
-	fbsub[0] = 0x63;
-	rbsub[0x63] = 0;
-	for (i = 1; i < 256; i++) {
-		y = ByteSub((byte) i);
-		fbsub[i] = y;
-		rbsub[y] = i;
-	}
-
-	for (i = 0, y = 1; i < 30; i++) {
-		rco[i] = y;
-		y = xtime(y);
-	}
-
-	/* calculate forward and reverse tables */
-	for (i = 0; i < 256; i++) {
-		y = fbsub[i];
-		b[3] = y ^ xtime(y);
-		b[2] = y;
-		b[1] = y;
-		b[0] = xtime(y);
-		ftable[i] = pack(b);
-
-		y = rbsub[i];
-		b[3] = bmul(InCo[0], y);
-		b[2] = bmul(InCo[1], y);
-		b[1] = bmul(InCo[2], y);
-		b[0] = bmul(InCo[3], y);
-		rtable[i] = pack(b);
-	}
-}
-
 static int _mcrypt_set_key(void *ctx, const void *user_key, int nk)
 {				/* blocksize=32*nb bits. Key=32*nk bits */
 	RI *rinst = ctx;
@@ -206,10 +124,6 @@ static int _mcrypt_set_key(void *ctx, const void *user_key, int nk)
 	if (nk < 4)
 		nk = 4;
 
-	if (tables_ok == 0) {
-		_mcrypt_rijndael_gentables();
-		tables_ok = 1;
-	}
 
 	rinst->Nb = nb;
 	rinst->Nk = nk;
