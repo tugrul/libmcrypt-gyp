@@ -119,6 +119,11 @@ void xor_stuff_en( nCFB_BUFFER *buf, void* akey, void (*func)(void*,void*), byte
 
 			memxor( plain, &buf->enc_s_register[buf->s_register_pos],
 				size); 
+
+			/* these bytes complete the ciphertext block in the
+			 * register, which is what gets encrypted next */
+			memcpy( &buf->s_register[buf->s_register_pos],
+				plain, size);
 		
 			memcpy(buf->enc_s_register, buf->s_register, blocksize);
 
@@ -127,8 +132,8 @@ void xor_stuff_en( nCFB_BUFFER *buf, void* akey, void (*func)(void*,void*), byte
 			memxor( &plain[size], buf->enc_s_register,
 				buf->s_register_pos);
 
-			memcpy( &buf->s_register[size], 
-				plain, buf->s_register_pos);
+			memcpy( buf->s_register,
+				&plain[size], buf->s_register_pos);
 
 			/* buf->s_register_pos remains the same */
 		}
@@ -161,12 +166,12 @@ void xor_stuff_en( nCFB_BUFFER *buf, void* akey, void (*func)(void*,void*), byte
 
 			_mcrypt_block_encrypt(akey, buf->enc_s_register);
 
-			memxor( &plain[min_size], buf->s_register,
+			memxor( &plain[min_size], buf->enc_s_register,
 				xor_size - min_size);
 
 			buf->s_register_pos = xor_size - min_size;
 
-			memcpy(buf->s_register, plain, xor_size - min_size);
+			memcpy(buf->s_register, &plain[min_size], xor_size - min_size);
 		}
 	
 	}
@@ -195,6 +200,11 @@ void xor_stuff_de( nCFB_BUFFER *buf, void* akey, void (*func)(void*,void*), byte
 		} else {
 			int size = blocksize - buf->s_register_pos;
 
+			/* the register takes the ciphertext, so copy it
+			 * before it is decrypted in place */
+			memcpy( &buf->s_register[buf->s_register_pos],
+				cipher, size);
+
 			memxor( cipher, &buf->enc_s_register[buf->s_register_pos],
 				size); 
 		
@@ -202,8 +212,8 @@ void xor_stuff_de( nCFB_BUFFER *buf, void* akey, void (*func)(void*,void*), byte
 
 			_mcrypt_block_encrypt(akey, buf->enc_s_register);
 
-			memcpy( &buf->s_register[size], 
-				cipher, buf->s_register_pos);
+			memcpy( buf->s_register,
+				&cipher[size], buf->s_register_pos);
 
 			memxor( &cipher[size], buf->enc_s_register,
 				buf->s_register_pos);
@@ -227,10 +237,10 @@ void xor_stuff_de( nCFB_BUFFER *buf, void* akey, void (*func)(void*,void*), byte
 			int size = blocksize - buf->s_register_pos;
 			int min_size =  size < xor_size ? size: xor_size;
 
+			memcpy( &buf->s_register[buf->s_register_pos], cipher, min_size);
+
 			memxor( cipher, &buf->enc_s_register[buf->s_register_pos],
 				min_size);
-
-			memcpy( &buf->s_register[buf->s_register_pos], cipher, min_size);
 
 			buf->s_register_pos += min_size;
 
@@ -241,9 +251,9 @@ void xor_stuff_de( nCFB_BUFFER *buf, void* akey, void (*func)(void*,void*), byte
 
 			_mcrypt_block_encrypt(akey, buf->enc_s_register);
 
-			memcpy(buf->s_register, cipher, xor_size - min_size);
+			memcpy(buf->s_register, &cipher[min_size], xor_size - min_size);
 
-			memxor( &cipher[min_size], buf->s_register,
+			memxor( &cipher[min_size], buf->enc_s_register,
 				xor_size - min_size);
 
 			buf->s_register_pos = xor_size - min_size;

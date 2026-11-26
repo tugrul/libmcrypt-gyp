@@ -4,6 +4,8 @@
  *   1. every algorithm's built-in known-answer test
  *   2. AES-128 (rijndael-128) known answers in all seven block modes
  *   3. an encrypt/decrypt round trip through every algorithm/mode pair
+ *   4. for every pair, a message handed over in several calls must give the
+ *      same result as in one call
  *
  * Exits 0 when everything passes. Run it through CTest or directly.
  *
@@ -119,6 +121,97 @@ static void test_round_trip(const char *algo, const char *mode, int *pairs)
 	mcrypt_module_close(td);
 }
 
+/* The size of piece number n. cbc and ecb take whole blocks only. The other
+ * modes get pieces that end inside a block, exactly on a block boundary and
+ * across one, which are the cases upstream's ncfb got wrong. */
+static int piece_size(int n, int bs, int block_mode, int decrypting)
+{
+	if (block_mode)
+		return bs * (1 + (n + decrypting) % 3);
+	if (bs <= 5) {		/* stream algorithms */
+		static const int sizes[] = { 5, 1, 30, 9, 16, 3 };
+		return sizes[(n + 2 * decrypting) % 6];
+	}
+	if (decrypting) {
+		switch (n % 6) {
+		case 0: return 3;
+		case 1: return bs + 5;
+		case 2: return 1;
+		case 3: return 2 * bs - 1;
+		case 4: return bs - 4;
+		default: return bs;
+		}
+	}
+	switch (n % 9) {
+	case 0: return 5;
+	case 1: return bs - 5;	/* fills the block exactly */
+	case 2: return 7;
+	case 3: return bs;	/* a whole block starting inside a block */
+	case 4: return 3;
+	case 5: return 2 * bs + 1;
+	case 6: return 1;
+	case 7: return bs - 1;
+	default: return bs + 2;
+	}
+}
+
+static void test_split_calls(const char *algo, const char *mode)
+{
+	unsigned char key[512], iv[512], plain[512], whole[512], pieces[512];
+	int i, n, off, keysize, ivsize, bs, block_mode, len;
+	MCRYPT td = mcrypt_module_open((char *) algo, (char *) mode);
+
+	if (td == MCRYPT_FAILED)
+		return;
+
+	keysize = mcrypt_enc_get_key_size(td);
+	ivsize = mcrypt_enc_get_iv_size(td);
+	bs = mcrypt_enc_get_block_size(td);
+	block_mode = mcrypt_enc_is_block_mode(td);
+	len = block_mode ? 12 * bs : 12 * bs + 13;
+
+	for (i = 0; i < (int) sizeof(key); i++) {
+		key[i] = (unsigned char) (i * 11 + 0x85);
+		iv[i] = (unsigned char) (i * 17 + 9);
+		plain[i] = (unsigned char) (i * 29 + 0x3b);
+	}
+
+	memcpy(whole, plain, len);
+	if (mcrypt_generic_init(td, key, keysize, ivsize > 0 ? iv : NULL) < 0
+	    || mcrypt_generic(td, whole, len) != 0
+	    || mcrypt_generic_deinit(td) < 0) {
+		fail("encrypt", algo, mode);
+		mcrypt_module_close(td);
+		return;
+	}
+
+	memcpy(pieces, plain, len);
+	mcrypt_generic_init(td, key, keysize, ivsize > 0 ? iv : NULL);
+	for (n = 0, off = 0; off < len; n++, off += i) {
+		i = piece_size(n, bs, block_mode, 0);
+		if (i > len - off)
+			i = len - off;
+		mcrypt_generic(td, pieces + off, i);
+	}
+	mcrypt_generic_deinit(td);
+	if (memcmp(pieces, whole, len) != 0)
+		fail("encrypt in pieces", algo, mode);
+
+	memcpy(pieces, whole, len);
+	mcrypt_generic_init(td, key, keysize, ivsize > 0 ? iv : NULL);
+	for (n = 0, off = 0; off < len; n++, off += i) {
+		i = piece_size(n, bs, block_mode, 1);
+		if (i > len - off)
+			i = len - off;
+		mdecrypt_generic(td, pieces + off, i);
+	}
+	mcrypt_generic_deinit(td);
+	if (memcmp(pieces, plain, len) != 0)
+		fail("decrypt in pieces", algo, mode);
+
+	mcrypt_module_close(td);
+}
+
 /* Returns the number of failures. */
 int libmcrypt_selftest(void)
 {
@@ -142,6 +235,11 @@ int libmcrypt_selftest(void)
 	for (i = 0; i < n_algos; i++) {
 		for (j = 0; j < n_modes; j++)
 			test_round_trip(algos[i], modes[j], &pairs);
+	}
+
+	for (i = 0; i < n_algos; i++) {
+		for (j = 0; j < n_modes; j++)
+			test_split_calls(algos[i], modes[j]);
 	}
 
 	printf("libmcrypt %s: %d algorithms, %d modes, %d algorithm/mode pairs, %d failure%s\n",

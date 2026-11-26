@@ -31,7 +31,6 @@ operation. Each of them produces the same output here as in upstream 2.5.8.
 - [Platform notes](#platform-notes)
 - [Repository layout](#repository-layout)
 - [Adding an algorithm or a mode](#adding-an-algorithm-or-a-mode)
-- [Licence and credits](#licence-and-credits)
 
 ## Using it from a Node addon
 
@@ -188,7 +187,7 @@ to switch them on.
 | `cbc` | Cipher block chaining | one block | whole blocks |
 | `ecb` | Electronic codebook | none | whole blocks |
 | `cfb` | Cipher feedback, 8 bits at a time | one block | any |
-| `ncfb` | Cipher feedback, a whole block at a time | one block | any, but see [Known problems](#known-problems) |
+| `ncfb` | Cipher feedback, a whole block at a time | one block | any |
 | `ofb` | Output feedback, 8 bits at a time | one block | any |
 | `nofb` | Output feedback, a whole block at a time | one block | any |
 | `ctr` | Counter | one block, the first counter value | any |
@@ -247,8 +246,7 @@ and `blowfish-compat` pass the string.
   padded for you: add and remove padding (PKCS#7, for example) yourself.
 - The other modes take any length, and the output has the length of the input.
 - Splitting the data across calls gives the same result as one call, at block
-  boundaries for `cbc` and `ecb` and anywhere for the other modes, except
-  `ncfb`: see [Known problems](#known-problems).
+  boundaries for `cbc` and `ecb` and anywhere for the other modes.
 
 ### Memory
 
@@ -361,10 +359,11 @@ counterpart, and OpenSSL does not ship the remaining ciphers.
 
 ## Differences from upstream libmcrypt
 
-Ciphertext, metadata, list order and error codes are the same as in 2.5.8.
-That was checked by linking one test program against this tree and against the
-unmodified 2.5.8 sources: 43,648 fixed cases and 345,000 random ones across all
-115 algorithm and mode pairs.
+Ciphertext, metadata, list order and error codes are the same as in 2.5.8,
+with the one exception described under *The `ncfb` fix* below. That was checked
+by linking one test program against this tree and against the unmodified 2.5.8
+sources: 43,648 fixed cases and 345,000 random ones across all 115 algorithm
+and mode pairs.
 
 What differs is the build and the part of the API that dealt with loadable
 modules.
@@ -410,6 +409,18 @@ changing any output that was right before:
 - The C dialect is pinned to gnu99. `des.c` and `tripledes.c` do not compile
   as C23, the default of GCC 15.
 
+**The `ncfb` fix.** In upstream, `ncfb` goes wrong when a message is handed
+over in several calls and one of them, other than the last, is not a whole
+number of blocks. The calls that follow then produce wrong output, and some of
+those bytes are the plaintext XORed with earlier ciphertext, so they are not
+protected by the key at all. Decryption in such pieces is wrong too. Here
+`ncfb` gives the same result however the data is split. This is the only place
+where output differs from upstream, and it differs only where upstream's was
+wrong: one call per message, and several calls that are all whole blocks
+except the last, give the same bytes and the same saved state as before.
+Data that upstream encrypted through the faulty path cannot be decrypted by
+repeating the same calls here.
+
 **Module registry.** Upstream gave every module function a name-mangled global
 symbol (`rijndael_128_LTX__mcrypt_set_key`) and generated a table of them.
 Here each module keeps its functions `static` and exports one descriptor; see
@@ -419,17 +430,16 @@ Here each module keeps its functions `static` and exports one descriptor; see
 
 Both come from upstream 2.5.8 and behave the same way there.
 
-- **`ncfb` with calls that are not whole blocks.** If a call to
-  `mcrypt_generic()` or `mdecrypt_generic()` in `ncfb` mode has a length that
-  is not a multiple of the block size, and more calls follow, the output of
-  those later calls is wrong and usually cannot be decrypted. One call for the
-  whole message is fine at any length, and so are several calls when every one
-  except the last is a whole number of blocks. `cfb`, `ofb`, `nofb` and `ctr`
-  do not have the problem.
 - **Enigma and `char`.** `enigma` reads the key through plain `char`. A key
   byte of `0x80` or more gives different output where `char` is unsigned (Linux
   on ARM, PowerPC and s390x) than where it is signed (x86). No other cipher
   depends on this.
+- **Saved state in the middle of a block.** In `ncfb` and `ctr`, a state taken
+  with `mcrypt_enc_get_state()` after a number of bytes that is not a multiple
+  of the block size does not continue correctly once it is put back with
+  `mcrypt_enc_set_state()`: the saved state does not include the current
+  keystream block. Save the state at a block boundary. `cbc`, `cfb`, `ofb` and
+  `nofb` are not affected.
 
 `KNOWN-BUGS` is upstream's own list, kept as it was. Its one entry is about
 CAST-256 and RC6 on 64-bit Alpha machines; RC6 is not part of this library.
@@ -454,7 +464,9 @@ The test is `test/selftest.c`. It runs:
 
 1. every algorithm's built-in known-answer test,
 2. AES-128 known answers from NIST SP 800-38A in all seven block modes,
-3. an encrypt and decrypt round trip through every algorithm and mode pair.
+3. an encrypt and decrypt round trip through every algorithm and mode pair,
+4. for every pair, that a message handed over in several calls gives the same
+   result as in one call.
 
 It ends with a line like
 `libmcrypt 2.5.8: 19 algorithms, 8 modes, 115 algorithm/mode pairs, 0 failures`
