@@ -22,7 +22,7 @@ else()
 endif()
 
 option(LIBMCRYPT_BUILD_TESTS
-    "Build the libmcrypt self-test program and register it with CTest"
+    "Build the libmcrypt test programs and register them with CTest"
     ${LIBMCRYPT_IS_TOP_LEVEL})
 
 include(CheckIncludeFile)

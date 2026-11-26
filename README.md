@@ -90,7 +90,7 @@ Then `#include <mcrypt.h>`.
 | CMake version | 3.14 or newer |
 | Library type | Always static, built as position-independent code so it can go into a shared library or a plugin. Set `CMAKE_POSITION_INDEPENDENT_CODE` yourself to change that. |
 | Install rules | None, on purpose. The `mcrypt.h` here is not compatible with upstream's, so it must not land where a system libmcrypt is expected. |
-| `LIBMCRYPT_BUILD_TESTS` | Builds the self-test and registers it with CTest. `ON` when this is the top-level project, `OFF` when it is pulled into another one. |
+| `LIBMCRYPT_BUILD_TESTS` | Builds the two tests and registers them with CTest. `ON` when this is the top-level project, `OFF` when it is pulled into another one. |
 | `LIBMCRYPT_C_STANDARD` | The C standard the library is compiled as: `99` (the default), `11`, `17` or `23`, always with the GNU extensions. `23` needs CMake 3.21. |
 | Warnings | When pulled into another project the library is compiled with its warnings off, so your `-Werror` does not decide whether it builds. |
 
@@ -368,7 +368,8 @@ and mode pairs.
 the library with it on every platform in CI.
 
 What differs is the build and the part of the API that dealt with loadable
-modules.
+modules. [docs/CHANGES-FROM-UPSTREAM.md](docs/CHANGES-FROM-UPSTREAM.md) is the
+record file by file.
 
 **Build.** autotools, libltdl and the generated symbol table are gone.
 `libmcrypt.gyp` and `CMakeLists.txt` list the sources.
@@ -565,6 +566,7 @@ node -e "const t = require('./test/addon/build/Release/selftest.node'); process.
 | `test/selftest.c` | The self-test. |
 | `test/vectors.c`, `test/vectors-2.5.8.txt` | The comparison with upstream 2.5.8 and upstream's answers. |
 | `test/addon/` | A Node addon that CI uses to test the gyp build. |
+| `docs/CHANGES-FROM-UPSTREAM.md` | Every difference from the 2.5.8 release, file by file, and the history. |
 | `AUTHORS`, `THANKS`, `KNOWN-BUGS`, `COPYING.LIB` | From upstream, unchanged. |
 
 ## Adding an algorithm or a mode
