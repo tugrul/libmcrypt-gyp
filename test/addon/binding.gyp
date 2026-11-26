@@ -14,10 +14,12 @@
             'target_name': 'selftest',
             'sources': [
                 'addon.c',
-                '../selftest.c'
+                '../selftest.c',
+                '../vectors.c'
             ],
             'defines': [
-                'LIBMCRYPT_SELFTEST_NO_MAIN'
+                'LIBMCRYPT_SELFTEST_NO_MAIN',
+                'LIBMCRYPT_VECTORS_NO_MAIN'
             ],
             'include_dirs': [
                 'lib/libmcrypt/include/'

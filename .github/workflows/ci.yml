@@ -38,7 +38,7 @@ jobs:
 
   # The gyp build, consumed the way node-mcrypt consumes it: as a dependency
   # of a Node addon, with the library in lib/libmcrypt. Loading the addon
-  # runs the self-test.
+  # runs the self-test, and vectors() compares the library with upstream.
   gyp:
     name: node-gyp / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -60,9 +60,9 @@ jobs:
           cp -r include lib modules libmcrypt.gyp test/addon/lib/libmcrypt/
       - name: Build the test addon
         run: npx --yes node-gyp@latest rebuild --directory test/addon
-      - name: Load it in Node
+      - name: Run both tests in Node
         run: |
-          node -e "process.exit(require('./test/addon/build/Release/selftest.node').failures ? 1 : 0)"
+          node -e "const t = require('./test/addon/build/Release/selftest.node'); process.exit(t.failures || t.vectors('test/vectors-2.5.8.txt') ? 1 : 0)"
 
   # The newest released compilers. The upstream sources contain undefined
   # behaviour that older compilers tolerated, and GCC 15 changed the default

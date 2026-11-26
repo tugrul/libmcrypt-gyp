@@ -118,7 +118,7 @@ int main(void)
 
     rc = mcrypt_generic_init(td, key, sizeof key, iv);
     if (rc < 0) {
-        fprintf(stderr, "mcrypt_generic_init: %s\n", mcrypt_strerror(rc));
+        fprintf(stderr, "mcrypt_generic_init: %s", mcrypt_strerror(rc));
         mcrypt_module_close(td);
         return 1;
     }
@@ -258,7 +258,9 @@ and `blowfish-compat` pass the string.
 ### Errors
 
 `mcrypt_strerror(code)` returns the text for a code and `mcrypt_perror(code)`
-prints it to `stderr`. The header does not name the codes.
+prints it to `stderr`. The text ends in a newline. For a code that is not in
+the table `mcrypt_strerror()` returns `NULL`. The header does not name the
+codes.
 
 | Code | Text |
 | --- | --- |
@@ -323,7 +325,7 @@ start the threads; after that there is no shared state that is written.
 | `int mcrypt_module_algorithm_version(char *algorithm)` | A date such as `20010801`. |
 | `int mcrypt_module_mode_version(char *mode)` | A date such as `20010801`. |
 | `const char *mcrypt_check_version(const char *req)` | The version string `2.5.8` if the library is at least `req` (or `req` is `NULL`), otherwise `NULL`. |
-| `const char *mcrypt_strerror(int err)` | Text for an error code. |
+| `const char *mcrypt_strerror(int err)` | Text for an error code, ending in a newline; `NULL` for an unknown code. |
 | `void mcrypt_perror(int err)` | Prints that text to `stderr`. |
 
 ## The same ciphers in OpenSSL
@@ -364,6 +366,10 @@ with the one exception described under *The `ncfb` fix* below. That was checked
 by linking one test program against this tree and against the unmodified 2.5.8
 sources: 43,648 fixed cases and 345,000 random ones across all 115 algorithm
 and mode pairs.
+
+`test/vectors-2.5.8.txt` keeps that comparison in the repository: it holds
+1,088 answers given by the unmodified upstream sources, and the tests compare
+the library with it on every platform in CI.
 
 What differs is the build and the part of the API that dealt with loadable
 modules.
@@ -460,7 +466,9 @@ ctest --test-dir build --output-on-failure
 `ctest --test-dir` needs CMake 3.20; with an older one, run `ctest` inside
 `build`.
 
-The test is `test/selftest.c`. It runs:
+CTest runs two programs.
+
+**`test/selftest.c`** checks what the library has to get right by itself:
 
 1. every algorithm's built-in known-answer test,
 2. AES-128 known answers from NIST SP 800-38A in all seven block modes,
@@ -469,17 +477,38 @@ The test is `test/selftest.c`. It runs:
    result as in one call.
 
 It ends with a line like
-`libmcrypt 2.5.8: 19 algorithms, 8 modes, 115 algorithm/mode pairs, 0 failures`
-and exits non-zero if anything failed.
+`libmcrypt 2.5.8: 19 algorithms, 8 modes, 115 algorithm/mode pairs, 0 failures`.
+
+**`test/vectors.c`** compares the library with upstream. It asks the library a
+fixed list of questions and looks each answer up in `test/vectors-2.5.8.txt`,
+which is the output of the same program linked with the unmodified 2.5.8
+sources:
+
+- the version, the two lists and their order, and what the library reports
+  about every algorithm, mode and pair,
+- which names open, the error texts, and the key lengths that are refused,
+- for every pair, the ciphertext and the saved mode state for each key size,
+  for keys that get padded, without an IV and with an IV of all one bits,
+- for every pair, a digest of 200 more encryptions with pseudo-random key, IV
+  and data lengths.
+
+It ends with a line like
+`libmcrypt 2.5.8 vectors: 1088 answers compared with upstream, 0 different, 0 other failures`.
+A difference is printed with upstream's answer next to the library's. The
+comment at the top of `test/vectors.c` describes the file format and how the
+file is made.
+
+Both programs exit non-zero if anything failed.
 
 To test the gyp build the way node-mcrypt uses it, build the small addon in
-`test/addon`, which runs the same self-test when it is loaded:
+`test/addon`. It runs the self-test when it is loaded and has a `vectors()`
+function for the comparison:
 
 ```sh
 mkdir -p test/addon/lib/libmcrypt
 cp -r include lib modules libmcrypt.gyp test/addon/lib/libmcrypt/
 npx node-gyp rebuild --directory test/addon
-node -e "process.exit(require('./test/addon/build/Release/selftest.node').failures ? 1 : 0)"
+node -e "const t = require('./test/addon/build/Release/selftest.node'); process.exit(t.failures || t.vectors('test/vectors-2.5.8.txt') ? 1 : 0)"
 ```
 
 ### Continuous integration
@@ -522,6 +551,7 @@ node -e "process.exit(require('./test/addon/build/Release/selftest.node').failur
 | `libmcrypt.gyp` | The node-gyp build. |
 | `CMakeLists.txt` | The CMake build. |
 | `test/selftest.c` | The self-test. |
+| `test/vectors.c`, `test/vectors-2.5.8.txt` | The comparison with upstream 2.5.8 and upstream's answers. |
 | `test/addon/` | A Node addon that CI uses to test the gyp build. |
 | `AUTHORS`, `THANKS`, `KNOWN-BUGS`, `COPYING.LIB` | From upstream, unchanged. |
 
@@ -563,7 +593,9 @@ To add a module:
    `mcrypt_list_modes()` return names in the order of these lists.
 4. Add the source file to `sources` in `libmcrypt.gyp` and to
    `LIBMCRYPT_SOURCES` in `CMakeLists.txt`.
-5. Run the self-test. It picks the new module up from the lists.
+5. Run the tests. The self-test picks the new module up from the lists. The
+   comparison with upstream reports it as a difference, because upstream's
+   file has no answers for it.
 
 3-way, Panama, SAFER-SK64 and SAFER-SK128 are already at step 2: their
 descriptors (`mcrypt_algo_threeway`, `mcrypt_algo_panama`,

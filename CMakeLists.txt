@@ -175,11 +175,20 @@ if(NOT LIBMCRYPT_IS_TOP_LEVEL)
 endif()
 
 # ---------------------------------------------------------------------------
-# Self-test: on by default only when this is the top-level project.
+# Tests: on by default only when this is the top-level project.
 # ---------------------------------------------------------------------------
 if(LIBMCRYPT_BUILD_TESTS)
     enable_testing()
+
+    # What the library has to get right by itself.
     add_executable(libmcrypt_selftest test/selftest.c)
     target_link_libraries(libmcrypt_selftest PRIVATE libmcrypt::libmcrypt)
     add_test(NAME libmcrypt_selftest COMMAND libmcrypt_selftest)
+
+    # Its answers compared with those of unmodified upstream 2.5.8.
+    add_executable(libmcrypt_vectors test/vectors.c)
+    target_link_libraries(libmcrypt_vectors PRIVATE libmcrypt::libmcrypt)
+    add_test(NAME libmcrypt_vectors
+        COMMAND libmcrypt_vectors check
+                ${CMAKE_CURRENT_SOURCE_DIR}/test/vectors-2.5.8.txt)
 endif()
