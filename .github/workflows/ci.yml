@@ -64,17 +64,20 @@ jobs:
         run: |
           node -e "const t = require('./test/addon/build/Release/selftest.node'); process.exit(t.failures || t.vectors('test/vectors-2.5.8.txt') ? 1 : 0)"
 
-  # The newest released compilers. The upstream sources contain undefined
-  # behaviour that older compilers tolerated, and GCC 15 changed the default
-  # C dialect; this job is the early warning for the next such change.
+  # The newest released compilers. The upstream sources contained undefined
+  # behaviour that older compilers tolerated, and declarations that C23 no
+  # longer accepts; this job is the early warning for the next such change.
+  # 99 is the dialect the build files pin, 23 checks that the sources stay
+  # valid in the newest one.
   newest-compilers:
-    name: Fedora latest / ${{ matrix.cc }}
+    name: Fedora latest / ${{ matrix.cc }} / C${{ matrix.std }}
     runs-on: ubuntu-latest
     container: fedora:latest
     strategy:
       fail-fast: false
       matrix:
         cc: [gcc, clang]
+        std: [99, 23]
     steps:
       - name: Install the toolchain
         run: dnf -y install git cmake make gcc clang
@@ -82,9 +85,9 @@ jobs:
       - name: Compiler version
         run: ${{ matrix.cc }} --version
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=${{ matrix.cc }}
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=${{ matrix.cc }} -DLIBMCRYPT_C_STANDARD=${{ matrix.std }}
       - name: Build
-        run: cmake --build build --parallel
+        run: cmake --build build --parallel --verbose
       - name: Test
         run: ctest --test-dir build --output-on-failure
 
@@ -122,18 +125,29 @@ jobs:
             ctest --test-dir /tmp/build --output-on-failure
           '
 
-  # Memory errors and undefined behaviour stop the test. shift-base is left
-  # out because of five known signed left shifts in upstream's DES, Triple
-  # DES, GOST and LOKI97 code.
+  # Memory errors and undefined behaviour stop the test. The 32-bit build is
+  # here because long is 32 bits wide in it, as it is on Windows: a shift that
+  # fits in a 64-bit long can overflow there.
   sanitizers:
-    name: Sanitizers
+    name: Sanitizers / ${{ matrix.name }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: 64-bit, flags: "-fsanitize=address,undefined" }
+          - { name: 32-bit, flags: "-m32 -fsanitize=undefined", packages: gcc-multilib }
     steps:
       - uses: actions/checkout@v6
+      - name: Install the 32-bit compiler runtime
+        if: matrix.packages
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ${{ matrix.packages }}
       - name: Configure
         run: >
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
-          "-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-sanitize=shift-base
+          "-DCMAKE_C_FLAGS=${{ matrix.flags }}
           -fno-sanitize-recover=all -fno-omit-frame-pointer"
       - name: Build
         run: cmake --build build --parallel

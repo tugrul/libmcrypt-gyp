@@ -12,8 +12,9 @@
                 'lib/',
                 'include/'
             ],
-            # The sources are pre-C99 style C (K&R declarations). Compilers that
-            # default to C23 (GCC 15 and later) reject them, so pin the dialect.
+            # Pin the dialect, so that every compiler builds the same language
+            # whatever its default is (GCC 15 moved to C23). The sources are
+            # valid from C99 to C23.
             'cflags_c': [
                 '-std=gnu99'
             ],

@@ -222,7 +222,7 @@ static int _mcrypt_set_key(void *ctx, const void *user_key, int len)
 static word32 f(word32 x)
 {
 	/* Do substitutions */
-	x = gost_k87[x >> 24 & 255] << 24 | gost_k65[x >> 16 & 255] << 16 |
+	x = (word32) gost_k87[x >> 24 & 255] << 24 | gost_k65[x >> 16 & 255] << 16 |
 	    gost_k43[x >> 8 & 255] << 8 | gost_k21[x & 255];
 
 	/* Rotate left 11 bits */

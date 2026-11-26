@@ -77,12 +77,16 @@ set(LIBMCRYPT_SOURCES
 add_library(libmcrypt STATIC ${LIBMCRYPT_SOURCES})
 add_library(libmcrypt::libmcrypt ALIAS libmcrypt)
 
+# The dialect is pinned so that every compiler builds the same language,
+# whatever its default is (GCC 15 moved to C23). The sources are valid from
+# C99 to C23; CI builds them as C23 as well, through this variable.
+set(LIBMCRYPT_C_STANDARD 99 CACHE STRING
+    "C standard the library is compiled as: 99, 11, 17 or 23")
+
 set_target_properties(libmcrypt PROPERTIES
     OUTPUT_NAME mcrypt
-    # The sources are pre-C99 style C (K&R declarations) and stop compiling
-    # as C23, the default of GCC 15 and later. gnu99, not c99: strdup() and
-    # mlock() need the extensions.
-    C_STANDARD 99
+    C_STANDARD ${LIBMCRYPT_C_STANDARD}
+    # gnu99, not c99: strdup() and mlock() need the extensions.
     C_EXTENSIONS ON
 )
 

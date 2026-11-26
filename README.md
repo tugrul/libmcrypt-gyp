@@ -91,6 +91,7 @@ Then `#include <mcrypt.h>`.
 | Library type | Always static, built as position-independent code so it can go into a shared library or a plugin. Set `CMAKE_POSITION_INDEPENDENT_CODE` yourself to change that. |
 | Install rules | None, on purpose. The `mcrypt.h` here is not compatible with upstream's, so it must not land where a system libmcrypt is expected. |
 | `LIBMCRYPT_BUILD_TESTS` | Builds the self-test and registers it with CTest. `ON` when this is the top-level project, `OFF` when it is pulled into another one. |
+| `LIBMCRYPT_C_STANDARD` | The C standard the library is compiled as: `99` (the default), `11`, `17` or `23`, always with the GNU extensions. `23` needs CMake 3.21. |
 | Warnings | When pulled into another project the library is compiled with its warnings off, so your `-Werror` does not decide whether it builds. |
 
 ## A first program
@@ -407,8 +408,13 @@ changing any output that was right before:
   32-bit PowerPC with clang 22.
 - The byte order is taken from the compiler, so big-endian builds work without
   a configure step.
-- The C dialect is pinned to gnu99. `des.c` and `tripledes.c` do not compile
-  as C23, the default of GCC 15.
+- Seven left shifts that overflowed a signed type, in DES, Triple DES, GOST
+  and LOKI97. Two of them overflowed only where `long` is 32 bits wide: on
+  32-bit systems and on Windows.
+- Old-style function declarations without parameter types in `des.c` and
+  `tripledes.c`. C23, the default of GCC 15, rejects the calls made through
+  them. The sources are now valid from C99 to C23. The build files still pin
+  the dialect to gnu99, so that every compiler builds the same language.
 
 **Constant lookup tables.** Upstream fills the tables of Rijndael, GOST and
 LOKI97 at the first key setup, in arrays that all threads share and without a
@@ -451,11 +457,6 @@ Both come from upstream 2.5.8 and behave the same way there.
 
 `KNOWN-BUGS` is upstream's own list, kept as it was. Its one entry is about
 CAST-256 and RC6 on 64-bit Alpha machines; RC6 is not part of this library.
-
-Five signed left shifts in the DES, Triple DES, GOST and LOKI97 code are
-reported by the undefined-behaviour sanitizer. They do not affect the output
-with any compiler tested, and the sanitizer job in CI leaves that one check
-off.
 
 ## Building and testing this repository
 
@@ -521,9 +522,9 @@ node -e "const t = require('./test/addon/build/Release/selftest.node'); process.
 | --- | --- |
 | CMake | Linux x86-64 with gcc and with clang, Linux arm64, macOS arm64, macOS x86-64, Windows x64 with MSVC |
 | node-gyp | Linux, macOS and Windows with the current Node.js LTS |
-| Fedora latest | The newest released gcc and clang |
+| Fedora latest | The newest released gcc and clang, each with the sources built as gnu99 and as C23 |
 | Emulated | s390x (big-endian), ppc64le, 32-bit ARM and 32-bit x86, under QEMU |
-| Sanitizers | AddressSanitizer and UndefinedBehaviorSanitizer |
+| Sanitizers | AddressSanitizer and UndefinedBehaviorSanitizer on 64-bit x86, UndefinedBehaviorSanitizer on 32-bit x86, with no check left out |
 | Function pointer types | Clang's function sanitizer: every call into a module goes through a pointer of the function's own type |
 
 ## Platform notes

@@ -85,18 +85,3 @@ static void pan_push(word32 * restrict In,	/* input array                    */
 	      PAN_STATE * restrict state);	/* 17-word finite-state machine   */
 
 static void pan_reset(PAN_BUFFER * buffer, PAN_STATE * state);
-
-#ifndef USE_MODULES
-void _mcrypt_panama_set_key(PANAMA_KEY * pan_key, char *in_key, int keysize,
-			 char *init_vec, int vecsize);
-void _mcrypt_panama_encrypt(PANAMA_KEY * pan_key, byte * buf, int length);
-void _mcrypt_panama_decrypt(PANAMA_KEY * pan_key, byte * buf, int length);
-int _mcrypt_panama_get_size ();
-int _mcrypt_panama_get_block_size();
-int _panama_is_block_algorithm();
-int _mcrypt_panama_get_key_size();
-int _mcrypt_panama_get_supported_key_sizes(int *size);
-char * _mcrypt_panama_get_algorithms_name();
-int _mcrypt_panama_self_test();
-word32 _mcrypt_panama_algorithm_version();
-#endif

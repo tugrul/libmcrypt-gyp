@@ -139,11 +139,11 @@ void f_fun(word32 res[2], const word32 in[2], const word32 key[2])
 	res[0] ^= sb1[byte(pp[0], 0) | ((key[1] << 8) & S1_HMASK)]
 	    | ((sb1[byte(pp[0], 1) | ((key[1] << 3) & S1_HMASK)] << 8))
 	    | ((sb2[byte(pp[0], 2) | ((key[1] >> 2) & S2_HMASK)] << 16))
-	    | ((sb2[byte(pp[0], 3) | ((key[1] >> 5) & S2_HMASK)] << 24));
+	    | (((word32) sb2[byte(pp[0], 3) | ((key[1] >> 5) & S2_HMASK)] << 24));
 	res[1] ^= sb1[byte(pp[1], 0) | ((key[1] >> 8) & S1_HMASK)]
 	    | ((sb1[byte(pp[1], 1) | ((key[1] >> 13) & S1_HMASK)] << 8))
 	    | ((sb2[byte(pp[1], 2) | ((key[1] >> 18) & S2_HMASK)] << 16))
-	    | ((sb2[byte(pp[1], 3) | ((key[1] >> 21) & S2_HMASK)] << 24));
+	    | (((word32) sb2[byte(pp[1], 3) | ((key[1] >> 21) & S2_HMASK)] << 24));
 
 }
 

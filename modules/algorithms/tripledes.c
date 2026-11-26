@@ -24,8 +24,11 @@
 
 /* #define	NULL	0 */
 
-static void permute(), perminit(), spinit();
-static word32 f();
+static void permute(char *inblock, char perm[16][16][8], char *outblock);
+static void perminit(char perm[16][16][8], char p[64]);
+static void spinit(TRIPLEDES_KEY * key, int pos);
+static word32 f(TRIPLEDES_KEY * key, int pos, register word32 r,
+		register char *subkey);
 
 
 /* Tables defined in the Data Encryption Standard documents */
@@ -187,8 +190,8 @@ static int _mcrypt_desinit(TRIPLEDES_KEY * key)
 	spinit(key, 0);
 	spinit(key, 1);
 	spinit(key, 2);
-	perminit(&key->iperm, ip);
-	perminit(&key->fperm, fp);
+	perminit(key->iperm, ip);
+	perminit(key->fperm, fp);
 
 
 	return 0;
@@ -648,7 +651,7 @@ static word32 f(TRIPLEDES_KEY * key, int pos, register word32 r,
 	subkey += 7;
 
 	/* Compute E(R) for each block of 6 bits, and run thru boxes */
-	er = ((int) r << 1) | ((r & 0x80000000) ? 1 : 0);
+	er = (int) ((r << 1) | ((r & 0x80000000) ? 1 : 0));
 	spp = &key->sp[pos][7][0];
 	rval = spp[(er ^ *subkey--) & 0x3f];
 	spp -= 64;
@@ -731,7 +734,7 @@ static void spinit(TRIPLEDES_KEY * key, int pos)
 			for (j = 0; j < 4; j++) {	/* For each output bit */
 				if (si[s][rowcol] & (8 >> j)) {
 					val |=
-					    1L << (31 - pbox[4 * s + j]);
+					    (word32) 1 << (31 - pbox[4 * s + j]);
 				}
 			}
 			key->sp[pos][s][i] = val;

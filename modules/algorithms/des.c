@@ -23,9 +23,12 @@
 
 /* #define	NULL	0 */
 
-static void permute_ip(), permute_fp(), perminit_ip(), spinit(),
-perminit_fp();
-static word32 f();
+static void permute_ip(char *inblock, DES_KEY * key, char *outblock);
+static void permute_fp(char *inblock, DES_KEY * key, char *outblock);
+static void perminit_ip(DES_KEY * key);
+static void perminit_fp(DES_KEY * key);
+static void spinit(DES_KEY * key);
+static word32 f(DES_KEY * key, register word32 r, register char *subkey);
 
 
 /* Tables defined in the Data Encryption Standard documents */
@@ -446,7 +449,7 @@ static word32 f(DES_KEY * key, register word32 r, register char *subkey)
 	subkey += 7;
 
 	/* Compute E(R) for each block of 6 bits, and run thru boxes */
-	er = ((int) r << 1) | ((r & 0x80000000) ? 1 : 0);
+	er = (int) ((r << 1) | ((r & 0x80000000) ? 1 : 0));
 	spp = &key->sp[7][0];
 	rval = spp[(er ^ *subkey--) & 0x3f];
 	spp -= 64;
@@ -550,7 +553,7 @@ static void spinit(DES_KEY * key)
 			for (j = 0; j < 4; j++) {	/* For each output bit */
 				if (si[s][rowcol] & (8 >> j)) {
 					val |=
-					    1L << (31 - pbox[4 * s + j]);
+					    (word32) 1 << (31 - pbox[4 * s + j]);
 				}
 			}
 			key->sp[s][i] = val;
